@@ -2,7 +2,9 @@
 
 **Project:** ML-Driven PVT Variation Aware Leakage Estimation  
 **Course:** Digital VLSI Design (DVD), Sem 5  
-**Last Updated:** 2026-11-05 16:47 IST
+**Last Updated:** 2026-11-05 22:06 IST
+
+> **Seed: `12175305`** — Combined last two digits of team roll numbers. Fixed across all scripts.
 
 ---
 
@@ -151,7 +153,8 @@ Total                     ████░░░░░░░░░░░░░░
 | 2026-11-05 | Ran ngspice simulations → generated PMOS_ON.csv (10,000 rows, KCL: 9.69e-10 A) |
 | 2026-11-05 | Ran ngspice simulations → generated PMOS_OFF.csv (10,000 rows, KCL: 9.10e-13 A) |
 | 2026-11-05 | Created `README_sangameshwar_pmos_dataset.md` |
-| 2026-11-05 | Created `memory.md`, `plan.md`, `status.md` |
+| 2026-11-05 | Created `memory.md`, `plan.md`, `status.md` in `project/` folder |
+| 2026-11-05 | Clarified seed `12175305` = combined last two digits of team roll numbers (`...05`) — updated all docs |
 
 ---
 

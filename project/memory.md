@@ -3,7 +3,7 @@
 **Project:** ML-Driven PVT Variation Aware Leakage Estimation  
 **Course:** Digital VLSI Design (DVD), Sem 5  
 **Author:** Sangameshwar  
-**Last Updated:** 2026-11-05
+**Last Updated:** 2026-11-05 22:06 IST
 
 ---
 
@@ -17,10 +17,27 @@
 | Channel length L | **45 nm** (fixed for all transistors) |
 | Width W | 45 nm – 360 nm (1× – 8× L_min), uniform random |
 | Temperature | −40 °C to 125 °C, uniform random |
-| Random seed | **12175305** (used everywhere) |
+| Random seed | **`12175305`** — combined last two digits of team roll numbers (`...05`) |
 | Test circuit | 3-bit CLA **or** 8-bit Parity Checker (confirm with TAs) |
 | Simulator | ngspice-42, batch mode (`ngspice -b`) |
 | Target accuracy | ≥ 99 % mean |
+
+---
+
+## 1.5 · Random Seed — Important
+
+```python
+SEED = 12175305
+```
+
+| Detail | Value |
+|--------|-------|
+| Seed value | **`12175305`** |
+| How derived | Combined **last two digits** of team members' roll numbers → `...05` appended |
+| Used in | Every script: `np.random.default_rng(12175305)` |
+| Applies to | All 4 data generation scripts, train/val/test split, gate corner sampling |
+
+> **Never change this seed.** All datasets, splits, and corner draws must use `12175305` to remain reproducible and consistent across the team.
 
 ---
 

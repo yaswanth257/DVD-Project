@@ -2,7 +2,10 @@
 
 **Project:** ML-Driven PVT Variation Aware Leakage Estimation  
 **Course:** Digital VLSI Design (DVD), Sem 5  
-**Last Updated:** 2026-11-05
+**Last Updated:** 2026-11-05 22:06 IST
+
+> **Random Seed: `12175305`** — Combined last two digits of team roll numbers (`...05`).  
+> This seed is used in **every script** without exception: data generation, train/val/test split, corner sampling.
 
 ---
 
@@ -60,7 +63,7 @@ For each dataset verify:
 #### A2.1 — Data Preprocessing
 - [ ] Load all 4 CSVs
 - [ ] Consider log-transform targets: predict `log10(|id|), log10(|ig|), log10(|is|), log10(|ib|)` — accounts for many-decade current range
-- [ ] Train/Val/Test split: **70/15/15** using fixed seed `12175305`
+- [ ] Train/Val/Test split: **70/15/15** using fixed seed **`12175305`** (combined last two digits of roll numbers)
 - [ ] Normalize / standardize features as needed per model type
 
 #### A2.2 — Model Types to Compare (per dataset)
@@ -170,5 +173,5 @@ For the same 200 corners and 18 cases:
 - SPICE gate results **must not** be used for training (reference only)
 - All NMOS in a gate share one process corner draw; all PMOS share another
 - AND2 and OR2 simulated as **complete gates** in SPICE (not as separate NAND2 + INV)
-- Fixed seed `12175305` everywhere for reproducibility
+- Fixed seed **`12175305`** (combined last two digits of team roll numbers) — used everywhere for reproducibility
 
