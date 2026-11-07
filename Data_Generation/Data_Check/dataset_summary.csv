@@ -1,0 +1,16 @@
+,NMOS_ON,NMOS_OFF,PMOS_ON,PMOS_OFF
+rows,20000,20000,20000,20000
+columns in spec order,True,True,True,True
+no missing / infinite values,True,True,True,True
+no duplicate rows,True,True,True,True
+no zero currents,True,True,True,True
+VDD within 0.9 V ±10 %,True,True,True,True
+temperature within −40…125 °C,True,True,True,True
+W within 1…8 × Lmin,True,True,True,True
+"Vd, Vs within 0…VDD",True,True,True,True
+"Vg, Vb as required",True,True,True,True
+vth0 within nominal ±10 %,True,True,True,True
+toxe within nominal ±10 %,True,True,True,True
+ndep within nominal ±10 %,True,True,True,True
+u0 within nominal ±10 %,True,True,True,True
+xj within nominal ±10 %,True,True,True,True

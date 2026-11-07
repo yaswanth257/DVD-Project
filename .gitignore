@@ -1,1 +1,6 @@
-Data_Generation\Scripts\__pycache__
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter autosave
+.ipynb_checkpoints/
