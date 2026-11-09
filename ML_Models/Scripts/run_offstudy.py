@@ -15,7 +15,8 @@ Stages (all MLP 128-64-32-16, the settings of the training notebooks, seed 12175
   10 NMOS_OFF, random split: robust (Huber) loss, median-based epoch selection, cosine schedule, learning curve
   11 Huber loss follow-up: transition width, the other three cases, + Kirchhoff term, + cosine decay
   12 smaller Huber transition widths (0.005, 0.002)
-  13 final Huber models of the four cases (2 seeds each, weights saved in Saved_Models/huber/)
+  13 final Huber models of the four cases (2 seeds each; candidates in Saved_Models/huber/, then
+     export_huber_models.py installs the better one per case as the final Saved_Models/<case>.pt)
 Results go to ML_Models/Results/offstudy/{runs,preds}/.
 """
 import argparse

@@ -1,12 +1,17 @@
-"""Pick the final Huber-loss model of each case, evaluate it on the test set next to the official model, plot it.
+"""Install the final models: the Huber-loss MLP of each case, chosen on the validation set, saved as Saved_Models/<case>.pt.
 
     python3 ML_Models/Scripts/export_huber_models.py        (after run_offstudy.py --stage 13)
 
-For every case the two trained seeds (Saved_Models/huber/<case>__seed*.pt) are compared on the VALIDATION set; the one with the
-lower validation median error is kept as Saved_Models/huber/<case>.pt and the other weights are deleted. A candidate whose worst
-validation prediction is off by more than MAX_DLOG decades (a numerical blow-up of the network, seen once in the study) is not eligible. The test set is used
-once, for the comparison with the official model (Saved_Models/<case>.pt) in Results/huber_test_results.csv and the parity plots.
-The official models are not modified. The Huber models load with `LeakageModel` like the official ones.
+run_offstudy.py --stage 13 trains two seeds per case (MLP 128-64-32-16, Huber loss with the transition width chosen on
+validation, β = 0.002) and leaves the candidates in Saved_Models/huber/<case>__seed*.pt. For each case the candidate with the
+lower validation median error is kept; a candidate whose worst validation prediction is off by more than MAX_DLOG decades (a
+numerical blow-up of the network, seen once in the study) is not eligible. The chosen model is written to Saved_Models/<case>.pt
+with the metadata that Results/model_evaluation.ipynb reads (model name, the validation errors recorded when it was trained, the
+loss), and the candidates are deleted.
+
+The script also writes Results/validation_comparison_HUBER.csv: the validation errors of the four final models in the format of
+the comparison tables of the training notebooks, so that model_evaluation.ipynb lists the Huber MLP next to the other model types.
+The test set is not used here; model_evaluation.ipynb evaluates the final models on it once.
 """
 import json
 import sys
@@ -14,86 +19,65 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import torch
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import offstudy as o                                                      # noqa: E402
-from leakage_model import LeakageModel, error_table, split_indices, OUTPUT_COLS   # noqa: E402
+from leakage_model import SEED, LeakageModel, OUTPUT_COLS, error_table, split_indices  # noqa: E402
 
-ROOT = o.ROOT
-MODELS, HUBER = ROOT / "ML_Models" / "Saved_Models", ROOT / "ML_Models" / "Saved_Models" / "huber"
-FINAL_RUNS = ROOT / "ML_Models" / "Results" / "offstudy" / "final" / "runs"
+ROOT = HERE.parents[1]
+MODELS = ROOT / "ML_Models" / "Saved_Models"
+CANDIDATES = MODELS / "huber"
+RUNS = ROOT / "ML_Models" / "Results" / "offstudy" / "final" / "runs"
 CASES = ["NMOS_ON", "NMOS_OFF", "PMOS_ON", "PMOS_OFF"]
+MODEL_NAME = "MLP (Huber loss)"
+METRICS = ["R2 (log|I|)", "mean err %", "median err %", "95th pct err %"]
 MAX_DLOG = 6.0
-log_true = lambda d: np.log10(d[OUTPUT_COLS].abs().to_numpy())
 
-rows, preds = [], {}
+
+def training_run(case, seed):
+    """The run record (metrics at training time) that run_offstudy.py --stage 13 wrote for this case and seed."""
+    found = sorted(RUNS.glob(f"{case}__random__log__lam0__seed{seed}__pat3000__huber*.json"))
+    assert len(found) == 1, f"{case} seed {seed}: expected one run record in {RUNS}, found {len(found)}"
+    return json.loads(found[0].read_text())
+
+
+rows = []
 for case in CASES:
-    df = pd.read_csv(o.DATA_DIR / f"{case}_20k.csv")
-    _, iv, it = split_indices(len(df))
-    cand = sorted(HUBER.glob(f"{case}__seed*.pt"))
-    if cand:                                              # choose on the validation set
+    df = pd.read_csv(ROOT / "Data_Generation" / "Datasets" / f"{case}_20k.csv")
+    _, idx_val, _ = split_indices(len(df))
+    y_val = np.log10(df.iloc[idx_val][OUTPUT_COLS].abs().to_numpy())
+    # candidates of stage 13 (or a model an earlier version of this script left as Saved_Models/huber/<case>.pt)
+    candidates = sorted(CANDIDATES.glob(f"{case}__seed*.pt")) or sorted(CANDIDATES.glob(f"{case}.pt"))
+    if candidates:
         scored = []
-        for f in cand:
-            m = LeakageModel(f)
-            pv = m.predict_log(df.iloc[iv])
-            val = error_table(log_true(df.iloc[iv]), pv).loc["average"]
-            dlog = float(np.max(np.abs(pv - log_true(df.iloc[iv]))))
-            scored.append((val["median err %"] if dlog < MAX_DLOG else np.inf, dlog, f))
-        scored.sort(key=lambda x: x[0])
-        best = scored[0][2]
+        for f in candidates:
+            pred = LeakageModel(f).predict_log(df.iloc[idx_val])
+            worst = float(np.max(np.abs(pred - y_val)))
+            median = error_table(y_val, pred).loc["average", "median err %"]
+            scored.append((median if worst < MAX_DLOG else np.inf, worst, f))
+        scored.sort(key=lambda s: s[0])
         assert np.isfinite(scored[0][0]), f"{case}: every candidate has a blown-up prediction"
-        print(f"{case}: validation median (worst |dlog10|) " + ", ".join(f"{f.stem.split('__')[1]} {v:.3f} % ({dl:.1f})" for v, dl, f in scored) + f" -> {best.stem.split('__')[1]}")
-        best.replace(HUBER / f"{case}.pt")
-        for f in cand:
-            if f.exists():
-                f.unlink()
-    final = HUBER / f"{case}.pt"
-    for name, path in (("official (notebooks)", MODELS / f"{case}.pt"), ("Huber loss", final)):
-        m = LeakageModel(path)
-        for part, idx in (("validation", iv), ("test", it)):
-            d = df.iloc[idx]
-            plog = m.predict_log(d)
-            tab = error_table(log_true(d), plog)
-            pred_mag = m.predict(d)
-            err = (pred_mag - d[OUTPUT_COLS].abs()).abs()
-            a = tab.loc["average"]
-            rows.append({"case": case, "model": name, "set": part, "R2 (log|I|)": a["R2 (log|I|)"], "median err %": a["median err %"],
-                         "95th pct err %": a["95th pct err %"], "mean err %": a["mean err %"],
-                         "id median / 95th / mean %": " / ".join(f"{tab.loc['id', k]:.2f}" for k in ("median err %", "95th pct err %", "mean err %")),
-                         "is median / 95th / mean %": " / ".join(f"{tab.loc['is', k]:.2f}" for k in ("median err %", "95th pct err %", "mean err %")),
-                         "sum err % (A-weighted)": 100 * err.to_numpy().sum() / d[OUTPUT_COLS].abs().to_numpy().sum(),
-                         "mean abs err id (A)": err["id"].mean(), "worst |log10 error| (decades)": float(np.max(np.abs(plog - log_true(d))))})
-        if name == "Huber loss":
-            preds[case] = (d[OUTPUT_COLS].abs(), pred_mag)         # test rows
+        best = scored[0][2]
+        ckpt = torch.load(best, map_location="cpu", weights_only=True)
+        run = training_run(case, ckpt["seed"])
+        # "seed" is the training seed of the network; the 80/10/10 split always uses SEED (split_seed)
+        ckpt.update(model=MODEL_NAME, loss={"kind": "huber", "beta": run["huber_beta"]}, epochs=run["epochs"],
+                    split_seed=SEED, training_run=run["tag"], validation={k: run["val"]["average"][k] for k in METRICS})
+        torch.save(ckpt, MODELS / f"{case}.pt")
+        print(f"{case}: candidates " + ", ".join(f"seed {torch.load(f, weights_only=True)['seed']} {v:.3f} % (worst {w:.1f} decades)"
+                                                for v, w, f in scored) + f" -> seed {ckpt['seed']} saved as {(MODELS / f'{case}.pt').relative_to(ROOT)}")
+        for f in candidates:
+            f.unlink()
+    ckpt = torch.load(MODELS / f"{case}.pt", map_location="cpu", weights_only=True)
+    assert ckpt.get("model") == MODEL_NAME, f"{case}: Saved_Models/{case}.pt is not a Huber model; run run_offstudy.py --stage 13 first"
+    run = training_run(case, ckpt["seed"])
+    for current in OUTPUT_COLS + ["average"]:
+        rows.append({"case": case, "model": MODEL_NAME, "current": current,
+                     **{k: run["val"][current][k] for k in METRICS}, "train time s": run["seconds"]})
 
-res = pd.DataFrame(rows)
-res.to_csv(ROOT / "ML_Models" / "Results" / "huber_test_results.csv", index=False)
-pd.set_option("display.width", 220); pd.set_option("display.float_format", lambda v: f"{v:.4g}")
-print(res[res["set"] == "test"].drop(columns="set").to_string(index=False))
-
-# parity plots: 4 currents x 4 cases, test set, log axes
-BLUE, INK_2, GRID, SURFACE = "#2a78d6", "#52514e", "#e6e5e1", "#fcfcfb"
-plt.rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "axes.edgecolor": GRID, "axes.grid": True,
-                     "grid.color": GRID, "grid.linewidth": 0.6, "axes.labelcolor": INK_2, "xtick.color": INK_2,
-                     "ytick.color": INK_2, "font.size": 8, "axes.titlesize": 9})
-fig, axes = plt.subplots(4, 4, figsize=(12, 11.5))
-for j, case in enumerate(CASES):
-    true, pred = preds[case]
-    for i, c in enumerate(OUTPUT_COLS):
-        ax = axes[i, j]
-        ax.scatter(true[c], pred[c], s=2, alpha=0.35, color=BLUE, linewidths=0, rasterized=True)
-        lo, hi = min(true[c].min(), pred[c].min()), max(true[c].max(), pred[c].max())
-        ax.plot([lo, hi], [lo, hi], color=INK_2, lw=0.8)
-        ax.set(xscale="log", yscale="log")
-        if i == 0:
-            ax.set_title(case)
-        if j == 0:
-            ax.set_ylabel(f"ML |{c}| (A)")
-        if i == 3:
-            ax.set_xlabel("SPICE |I| (A)")
-fig.suptitle("Huber-loss models, test set (2,000 rows per case): predicted vs SPICE", x=0.01, ha="left", fontsize=11)
-fig.tight_layout()
-fig.savefig(ROOT / "ML_Models" / "Plots" / "parity_huber_models.png", dpi=130)
-print("saved", HUBER, ROOT / "ML_Models" / "Plots" / "parity_huber_models.png")
+if CANDIDATES.is_dir() and not any(CANDIDATES.iterdir()):
+    CANDIDATES.rmdir()
+out = ROOT / "ML_Models" / "Results" / "validation_comparison_HUBER.csv"
+pd.DataFrame(rows).to_csv(out, index=False)
+print("written", out.relative_to(ROOT))

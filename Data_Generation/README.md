@@ -36,6 +36,7 @@ Datasets/
   NMOS_ON.csv  NMOS_OFF.csv  PMOS_ON.csv  PMOS_OFF.csv            original 10,000-sample datasets
   NMOS_ON_20k.csv  NMOS_OFF_20k.csv  PMOS_ON_20k.csv  PMOS_OFF_20k.csv   20,000-sample datasets used for training
 Scripts/        generation and simulation scripts (table below)
+Netlists/       NMOS_ON.cir  NMOS_OFF.cir  PMOS_ON.cir  PMOS_OFF.cir   example single-transistor netlists (deliverable 2)
 Data_Check/     data_check.ipynb and its outputs (Kirchhoff check, trend plots, dataset summary)
 ```
 
@@ -66,16 +67,24 @@ currents to 6 digits); the run that produced the committed files reproduced them
 | `generate_nmos_on_inputs.py`, `generate_nmos_off_inputs.py` | draw the 10k NMOS inputs |
 | `simulate_nmos_on.py`, `simulate_nmos_off.py` | simulate them → `NMOS_ON.csv`, `NMOS_OFF.csv` |
 | `generate_pmos_datasets.py` | draw + simulate the 10k PMOS cases → `PMOS_ON.csv`, `PMOS_OFF.csv` |
-| `generate_pmos_on_inputs.py`, `generate_pmos_off_inputs.py`, `simulate_pmos_on.py`, `simulate_pmos_off.py` | per-case PMOS scripts (see note 2) |
 | `generate_nmos_20k.py` | NMOS 20k datasets (ON and OFF) |
 | `generate_pmos_20k.py` | PMOS 20k datasets (ON and OFF) |
+| `write_example_netlists.py` | writes `Netlists/<case>.cir` (the netlist of row 1 of each dataset) and checks it in ngspice against the CSV |
 
 Run everything from the repository root (the netlists include `45nm_MGK.pm` by relative path):
 
 ```bash
 python3 Data_Generation/Scripts/generate_nmos_20k.py      # 2 × 20,000 simulations, about 20 min here (8 cores, one simulation at a time)
 python3 Data_Generation/Scripts/generate_pmos_20k.py
+python3 Data_Generation/Scripts/write_example_netlists.py # the four example netlists (seconds)
 ```
+
+## Example netlists (`Netlists/`)
+
+One single-transistor netlist per case: exactly the netlist the generators simulate for every sample, filled in with row 1
+of the dataset (its SPICE currents are in the header comment). The model is included relative to the netlist file, so each
+one runs from any directory: `ngspice -b Data_Generation/Netlists/NMOS_OFF.cir` prints `RESULT id ig is ib`. Re-simulated with
+ngspice 42, all four reproduce the currents stored in the CSVs exactly.
 
 ## Data check (`Data_Check/data_check.ipynb`)
 
@@ -105,10 +114,10 @@ others are real physics; they matter for the model error (see `ML_Models/README.
    scripts still say 10,000, so those files could not be reproduced from the repo. They were valid random samples but shared
    **no row** with the 10k datasets (only the `vdd` column coincided), unlike the PMOS 20k files. They were replaced by files
    built exactly like the PMOS ones (table above). The old files remain in the git history.
-2. **PMOS per-case scripts vs. the committed PMOS CSVs.** `generate_pmos_on_inputs.py` / `generate_pmos_off_inputs.py` draw the
-   negative `vth0` as `−U(0.9|v|, 1.1|v|)`, whereas `generate_pmos_datasets.py` and `generate_pmos_20k.py` (which reproduce the
-   committed `PMOS_*.csv` exactly) draw `U(1.1v, 0.9v)`. Same range, mirrored draw, so the per-case scripts do not reproduce the
-   `vth0` column of the CSVs. They were left unchanged; use `generate_pmos_datasets.py` / `generate_pmos_20k.py`.
-3. **ngspice executable name.** `simulate_nmos_*.py` and `generate_pmos_20k.py` call `ngspice_con`; `generate_nmos_20k.py`
-   uses `ngspice_con` if it exists and plain `ngspice` otherwise. The NMOS 20k files were generated with ngspice 45.2, which
+2. **Removed PMOS per-case scripts.** `generate_pmos_on_inputs.py`, `generate_pmos_off_inputs.py`, `simulate_pmos_on.py` and
+   `simulate_pmos_off.py` were removed: they drew the negative `vth0` as `−U(0.9|v|, 1.1|v|)` instead of `U(1.1v, 0.9v)`, so they
+   did not reproduce the committed `PMOS_*.csv` (same range, mirrored draw). `generate_pmos_datasets.py` (10k) and
+   `generate_pmos_20k.py` reproduce them exactly. The old scripts remain in the git history.
+3. **ngspice executable name.** Every script uses `ngspice_con` (the Windows console build) if it exists and plain `ngspice`
+   otherwise (`generate_pmos_datasets.py` always calls `ngspice`), so they run unchanged on Windows and Linux. The NMOS 20k files were generated with ngspice 45.2, which
    reproduced the stored 10k currents exactly.

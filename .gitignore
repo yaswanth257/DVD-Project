@@ -12,3 +12,9 @@ Data_Generation/Scripts/*_sample.cir
 
 # Local virtual environments
 .venv*/
+
+# Scripts used to run the Huber training on the Turing cluster (kept locally, not part of the repository)
+Cluster/
+
+# Model picked by the training notebooks when re-run (the final models are the Huber MLPs in Saved_Models/)
+ML_Models/Saved_Models/notebook_mse/

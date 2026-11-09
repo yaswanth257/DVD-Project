@@ -3,9 +3,10 @@ PMOS 20k dataset generator — same seed as the 10k run.
 
 Strategy
 --------
-The original simulate_pmos_on.py / simulate_pmos_off.py each call
-generate_pmos_on_inputs() / generate_pmos_off_inputs(), which both
-create a fresh np.random.default_rng(SEED=12175305) and draw 10 000
+The 10k PMOS run (generate_pmos_datasets.py; the per-case scripts
+simulate_pmos_on.py / simulate_pmos_off.py were removed, see
+Data_Generation/README.md note 2) creates, for each mode, a fresh
+np.random.default_rng(SEED=12175305) and draws 10 000
 samples in this exact order:
   vdd (10k) → vd (10k) → vs (10k) → temp (10k) → w (10k)
   → vth0 (10k) → toxe (10k) → ndep (10k) → u0 (10k) → xj (10k)
@@ -30,6 +31,7 @@ Run from the project root:
 import csv
 import os
 import re
+import shutil
 import subprocess
 
 import numpy as np
@@ -48,7 +50,7 @@ VDD_MIN = NOMINAL_VDD * 0.9   # 0.81 V
 VDD_MAX = NOMINAL_VDD * 1.1   # 0.99 V
 
 MODEL_FILE  = "45nm_MGK.pm"
-NGSPICE_CMD = "ngspice_con"   # console ngspice on this system
+NGSPICE_CMD = shutil.which("ngspice_con") or "ngspice"   # console ngspice: "ngspice_con" (Windows) where it exists, else "ngspice"
 
 NETLIST_TMP_ON  = "Data_Generation/Scripts/PMOS_ON_20k_tmp.cir"
 NETLIST_TMP_OFF = "Data_Generation/Scripts/PMOS_OFF_20k_tmp.cir"

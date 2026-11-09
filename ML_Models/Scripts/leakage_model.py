@@ -10,6 +10,8 @@ Example
     model = LeakageModel("ML_Models/Saved_Models/PMOS_OFF.pt")
     currents = model.predict(df)          # df has columns vdd, temp, w, vd, vs, vg, vb, vth0, toxe, ndep, u0, xj
                                           # -> |id|, |ig|, |is|, |ib| in A (magnitudes)
+    signed = model.predict_signed(df)     # -> id, ig, is, ib in A with the ngspice sign
+                                          #    (+ = current flowing out of the transistor at that terminal)
 """
 from pathlib import Path
 
@@ -24,6 +26,30 @@ SEED = 12175305
 RAW_FEATURES = ["vdd", "temp", "w", "vd", "vs", "vth0", "toxe", "ndep", "u0", "xj"]
 OUTPUT_COLS = ["id", "ig", "is", "ib"]
 K_B, Q_E = 1.380649e-23, 1.602176634e-19
+
+# Sign of each current (ngspice / dataset convention: + = current flowing OUT of the transistor at that terminal).
+# In every case ig and ib have one sign, and of drain / source the terminal at the lower ("low") or higher ("high")
+# voltage has one sign; the remaining terminal takes the sign that satisfies Kirchhoff (id + ig + is + ib = 0).
+# All three fixed signs hold for 100 % of the 20,000 rows of each dataset (ML_Models/Scripts/check_sign_rule.py).
+#            sign ig, sign ib, fixed terminal, its sign
+SIGN_RULES = {"NMOS_ON":  (-1, +1, "low",  +1),     # channel current leaves at the lower-voltage terminal
+              "NMOS_OFF": (+1, +1, "high", -1),     # the lower-voltage terminal is the near-cancelled one
+              "PMOS_ON":  (+1, -1, "high", -1),     # channel current enters at the higher-voltage terminal
+              "PMOS_OFF": (-1, -1, "low",  +1)}     # the higher-voltage terminal is the near-cancelled one
+
+
+def apply_signs(case, magnitudes, vd, vs):
+    """Signed currents (n, 4: id, ig, is, ib) from magnitudes with SIGN_RULES. vd, vs: drain / source voltages (n,)."""
+    m = np.asarray(magnitudes, dtype=float)
+    vd, vs = np.asarray(vd, dtype=float), np.asarray(vs, dtype=float)
+    s_g, s_b, which, s_fix = SIGN_RULES[case]
+    fix_is_d = (vd >= vs) if which == "high" else (vd < vs)           # is the fixed terminal the drain?
+    m_fix = np.where(fix_is_d, m[:, 0], m[:, 2])
+    s_other = -np.sign(s_fix * m_fix + s_g * m[:, 1] + s_b * m[:, 3])  # Kirchhoff for the remaining terminal
+    s_other[s_other == 0] = -s_fix
+    s_d = np.where(fix_is_d, s_fix, s_other)
+    s_s = np.where(fix_is_d, s_other, s_fix)
+    return np.column_stack([s_d * m[:, 0], s_g * m[:, 1], s_s * m[:, 2], s_b * m[:, 3]])
 
 
 def make_features(df, kind="pmos"):
@@ -114,3 +140,12 @@ class LeakageModel:
     def predict(self, df):
         """Current magnitudes |id|, |ig|, |is|, |ib| in A."""
         return pd.DataFrame(10 ** self.predict_log(df), columns=self.outputs, index=df.index)
+
+    def predict_signed(self, df):
+        """Currents id, ig, is, ib in A with their sign (+ = out of the transistor at that terminal), see SIGN_RULES.
+
+        Test set, predicted magnitudes: every sign right on 99.6 - 100 % of the rows; the wrongly signed currents
+        are near-cancelled ones and add up to less than 1e-5 of the total current.
+        """
+        signed = apply_signs(self.case, self.predict(df).to_numpy(), df["vd"].to_numpy(), df["vs"].to_numpy())
+        return pd.DataFrame(signed, columns=self.outputs, index=df.index)

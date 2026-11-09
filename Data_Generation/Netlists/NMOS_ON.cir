@@ -1,0 +1,39 @@
+* NMOS single-point OP
+* Example netlist for NMOS_ON: row 1 of Data_Generation/Datasets/NMOS_ON.csv (= row 1 of NMOS_ON_20k.csv)
+* vdd = 0.9476988382906772 V; SPICE currents in the dataset (A, positive = out of the transistor at that terminal):
+*   id = 4.704890e-07   ig = -1.038030e-10   is = -4.703850e-07   ib = 1.846030e-13
+* Every sample of the dataset is this netlist with that sample's values.
+
+.include "../../45nm_MGK.pm"
+
+.options gmin=1e-18 abstol=1e-18 reltol=1e-6 vntol=1e-9
+
+.temp 51.95862815172555
+
+M1 drain gate source body nmos W=3.558108972097989e-07 L=4.5e-08
+
+Vd drain 0 DC 0.7410130355825834
+Vg gate   0 DC 0.9476988382906772
+Vs source 0 DC 0.9302695873715742
+Vb body   0 DC 0
+
+.control
+set numdgt=15
+
+altermod nmos vth0 = 0.3478780801462567
+altermod nmos toxe = 8.511029425794973e-10
+altermod nmos ndep = 6.583910035543307e+18
+altermod nmos u0   = 0.03051554421546585
+altermod nmos xj   = 1.484203728180843e-08
+
+op
+
+let id_val = i(Vd)
+let ig_val = i(Vg)
+let is_val = i(Vs)
+let ib_val = i(Vb)
+
+echo RESULT $&id_val $&ig_val $&is_val $&ib_val
+
+.endc
+.end

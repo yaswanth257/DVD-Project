@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import subprocess
 
 import pandas as pd
@@ -16,7 +17,7 @@ OUTPUT_FILE = "Data_Generation/Datasets/NMOS_OFF.csv"
 LMIN = 45e-9
 TEST_SAMPLE_COUNT = None
 
-NGSPICE_COMMAND = "ngspice_con"  # Console executable for automated ngspice simulations
+NGSPICE_COMMAND = shutil.which("ngspice_con") or "ngspice"  # console ngspice: "ngspice_con" (Windows) where it exists, else "ngspice"
 
 
 def format_value(value):

@@ -4,6 +4,11 @@ Section for the "Error analysis" part of the report. Setup: model file `45nm_MGK
 80 / 10 / 10 split with seed 12175305, MLP (25 inputs → 128-64-32-16 → 4 outputs, SiLU) predicting `log10 |I|` of `id, ig, is, ib`.
 Every number below is reproduced by `ML_Models/Results/nmos_off_study.ipynb` (training runs: `ML_Models/Scripts/run_offstudy.py`).
 
+> **Final models.** This analysis was made on the earlier models of the training notebooks (MSE loss; "official" below). Its
+> outcome, the Huber loss (section 4.1), made the Huber MLPs the final models: `ML_Models/Saved_Models/<case>.pt`, evaluated in
+> `ML_Models/Results/model_evaluation.ipynb`. Sections 1 – 3 describe the earlier NMOS_OFF model; the cause they identify (near-cancelled
+> currents) is the same for the final model (test median 0.13 %, 95th percentile 0.99 %, mean 5.73 %, set by the same row 13855).
+
 ## 1. What needs explaining
 
 | Current (NMOS_OFF, test set, 2,000 rows) | Median error | 95th percentile | Mean error | Mean \|I\| (A) | Mean absolute error (A) | Absolute error / mean \|I\| |
@@ -99,7 +104,7 @@ limits their influence. Nothing else changes (network, features, split, optimize
 * **More training data helps, with diminishing returns** (β = 0.002, seed 305, trained on a subset of the training rows): test median 0.33 / 0.22 / 0.14 / 0.13 % and 95th percentile 3.7 / 2.4 / 1.35 / 1.16 % for 4,000 / 8,000 / 12,000 / 16,000 rows. The gain flattens between 12,000 and 16,000 rows, so more than 20,000 samples is unlikely to be the main lever for the typical error (not tested beyond 16,000 rows).
 * The structured splits of section 5 and all comparisons of section 4.2 use the MSE loss of the notebooks; they were not repeated with the Huber loss.
 
-Final Huber models (β = 0.002; of the two trained seeds the one with the lower validation median error is kept: NMOS_ON 12175305, NMOS_OFF 12175306, PMOS_ON 12175306, PMOS_OFF 12175305; no candidate had a blown-up prediction). Test set, 2,000 rows, average over the four currents; the ampere-weighted error is Σ|I_pred − I_true| / Σ|I_true|. [`ML_Models/Results/huber_test_results.csv`](../ML_Models/Results/huber_test_results.csv), parity plots [`ML_Models/Plots/parity_huber_models.png`](../ML_Models/Plots/parity_huber_models.png).
+Final Huber models (β = 0.002; of the two trained seeds the one with the lower validation median error is kept: NMOS_ON 12175305, NMOS_OFF 12175306, PMOS_ON 12175306, PMOS_OFF 12175305; no candidate had a blown-up prediction). Test set, 2,000 rows, average over the four currents; the ampere-weighted error is Σ|I_pred − I_true| / Σ|I_true|. [`ML_Models/Results/huber_test_results.csv`](../ML_Models/Results/huber_test_results.csv), parity plots of the final models `ML_Models/Plots/parity_<case>.png`.
 
 | Case | Model | R² (log\|I\|) | Median error | 95th percentile | Mean error | Ampere-weighted error |
 |---|---|---|---|---|---|---|
@@ -171,7 +176,7 @@ The ON columns use the notebooks' early stopping (patience 300), not the 3000 ep
   a signed current that crosses zero is dominated by a few rows and should be quoted together with the ampere-weighted error (0.76 %).
 * **Gate level (not yet evaluated).** Whether a badly predicted, strongly cancelled `id` / `is` matters depends on how the terminal currents are summed into the gate
   leakage: the absolute error of such a row is small (0.04 % – 0.26 % of the largest current in it), so a sum over the supply-side currents should inherit roughly the ampere-weighted level (0.76 % for the official NMOS_OFF model, 0.35 % for the Huber model), not the percentage of the cancelled row.
-* **Recommended:** train all four models with the Huber loss (section 4.1; the models in `ML_Models/Saved_Models/huber/` show the effect) and choose among candidates by the validation median and 95th percentile and a check for blown-up predictions, not by the validation mean.
+* **Recommended (done):** train all four models with the Huber loss (section 4.1; these are now the final models, `ML_Models/Saved_Models/<case>.pt`) and choose among candidates by the validation median and 95th percentile and a check for blown-up predictions, not by the validation mean.
 * **Untested improvements:** (1) more samples, or a loss weight, at low source voltage (< 0.3 V) and below 40 °C, where the cancellation happens; (2) an ensemble of Huber-trained models; (3) predicting the sign-definite terms (the large current and `ig`) and the sign / ratio of the
   net current with a model whose loss is in amperes relative to the row's largest current; (4) the structured splits with the Huber loss.
 * **Limits of this study:** one split, one network family, a training seed that alone changes the median by 3×; differences smaller than that between single runs are not conclusive.
