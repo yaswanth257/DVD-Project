@@ -8,6 +8,7 @@ import pandas as pd
 # Project configuration
 SEED = 12175305
 NUM_SAMPLES = 10000
+# NUM_SAMPLES = 20000
 
 NOMINAL_VDD = 0.9
 LMIN = 45e-9

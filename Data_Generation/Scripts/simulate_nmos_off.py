@@ -11,6 +11,8 @@ MODEL_FILE = "45nm_MGK.pm"
 NETLIST_FILE = "Data_Generation/Scripts/NMOS_OFF_sample.cir"
 OUTPUT_FILE = "Data_Generation/Datasets/NMOS_OFF.csv"
 
+# OUTPUT_FILE = "Data_Generation/Datasets/NMOS_OFF_20k.csv"
+
 LMIN = 45e-9
 TEST_SAMPLE_COUNT = None
 
