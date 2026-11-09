@@ -4,3 +4,11 @@ __pycache__/
 
 # Jupyter autosave
 .ipynb_checkpoints/
+
+# Leftovers of an interrupted dataset-generation run
+*.partial
+Data_Generation/Scripts/*_tmp.cir
+Data_Generation/Scripts/*_sample.cir
+
+# Local virtual environments
+.venv*/

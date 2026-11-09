@@ -1,8 +1,8 @@
 """Shared code for the transistor leakage models.
 
 Used by the evaluation notebook and by Part B / Part C to load a saved model and predict the four terminal
-currents of one transistor. The feature code is identical to the training notebook
-(ML_Models/Notebooks/pmos_models.ipynb, section 5).
+currents of one transistor. The feature code is identical to the training notebooks
+(ML_Models/Notebooks/pmos_models.ipynb and nmos_models.ipynb, section 5).
 
 Example
 -------

@@ -1,13 +1,13 @@
 case,trend,expected,Spearman rho,median ratio (last bin / first bin),pass
-NMOS_OFF,OFF current vs temperature,rises,0.2690337537704053,3.320270506038133,True
+NMOS_OFF,OFF current vs temperature,rises,0.2655869032891814,2.940905262919134,True
 PMOS_OFF,OFF current vs temperature,rises,0.24645400828483216,2.612187081462415,True
-NMOS_OFF,OFF current vs |vth0| (cold),falls,-0.09509164248800589,0.6720668046508079,True
-NMOS_OFF,OFF current vs |vth0| (room),falls,-0.11272501069690541,0.5984934997702243,True
-NMOS_OFF,OFF current vs |vth0| (hot),falls,-0.14956961731057913,0.7589227060713266,True
+NMOS_OFF,OFF current vs |vth0| (cold),falls,-0.014281374049740557,0.8862686780430611,True
+NMOS_OFF,OFF current vs |vth0| (room),falls,-0.10038114895280809,0.711044588462311,True
+NMOS_OFF,OFF current vs |vth0| (hot),falls,-0.12847352716898675,0.5452064599803117,True
 PMOS_OFF,OFF current vs |vth0| (cold),falls,-0.07268256469601393,0.804518000925631,True
 PMOS_OFF,OFF current vs |vth0| (room),falls,-0.09977308010020966,0.5794325572627029,True
 PMOS_OFF,OFF current vs |vth0| (hot),falls,-0.09792785988612202,0.695391953290251,True
-NMOS_ON,gate current vs toxe,falls,-0.41060474623802545,0.07651288640052493,True
-NMOS_OFF,gate current vs toxe,falls,-0.5240476983442909,0.08813159912472941,True
+NMOS_ON,gate current vs toxe,falls,-0.40688117971788934,0.08103818088931643,True
+NMOS_OFF,gate current vs toxe,falls,-0.5272896095166454,0.08606393233514033,True
 PMOS_ON,gate current vs toxe,falls,-0.4639330354523513,0.08551743193646312,True
 PMOS_OFF,gate current vs toxe,falls,-0.5474788527485919,0.0890676919967345,True

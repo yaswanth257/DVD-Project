@@ -1,5 +1,6 @@
 ,NMOS_ON,NMOS_OFF,PMOS_ON,PMOS_OFF
 rows,20000,20000,20000,20000
+"rows 1-10,000 = original 10k dataset",True,True,True,True
 columns in spec order,True,True,True,True
 no missing / infinite values,True,True,True,True
 no duplicate rows,True,True,True,True
