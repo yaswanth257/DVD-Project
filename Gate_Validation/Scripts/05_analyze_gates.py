@@ -3,6 +3,7 @@
 Per-case metrics (200 corners each):   error % = (ML / SPICE - 1) x 100
   bias = median signed error, median err / 95th pct err = percentiles of |error|, mean accuracy = 100 - mean |error|.
 Two leakage definitions are reported (see 04_predict_ml_gates.py): 'total' (VDD source + inputs at VDD) and 'vdd' (VDD source only).
+The tables use the Kirchhoff composition of step 4; gate_composition_comparison.csv puts it next to the plain sum of the model currents.
 
     python3 Gate_Validation/Scripts/05_analyze_gates.py
 """
@@ -48,6 +49,18 @@ for kind in ("total", "vdd"):
     ax.set_xlabel("SPICE leakage (A)"); ax.set_ylabel("ML leakage (A)")
     ax.set_title(f"Gate leakage, ML vs SPICE ({len(d)} simulations, {kind})"); ax.legend(); ax.grid(alpha=0.3, which="both")
     fig.tight_layout(); fig.savefig(GV / "Plots" / f"gate_parity_{kind}.png", dpi=150); plt.close(fig)
+
+# effect of the composition: Kirchhoff for the ON channels (used above) vs the plain sum of the model currents
+rows = []
+for kind in ("total", "vdd"):
+    for label, col in (("Kirchhoff for ON channels", f"ml_leak_{kind}"), ("plain sum of model currents", f"ml_leak_{kind}_sum")):
+        e = (d[col] / d[f"spice_leak_{kind}"] - 1) * 100
+        rows.append({"leakage": kind, "composition": label, "bias %": e.median(), "median err %": e.abs().median(),
+                     "95th pct err %": e.abs().quantile(0.95), "mean accuracy %": 100 - e.abs().mean()})
+comp = pd.DataFrame(rows)
+comp.to_csv(GV / "Results" / "gate_composition_comparison.csv", index=False)
+print("\n=== Composition: Kirchhoff for ON channels vs plain sum (all 3,600 operating points) ===")
+print(comp.to_string(index=False, float_format=lambda v: f"{v:.4g}"))
 
 # error vs temperature / VDD, per gate (for the error analysis in the report)
 fig, axs = plt.subplots(1, 2, figsize=(11, 4))

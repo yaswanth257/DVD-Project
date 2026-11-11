@@ -35,6 +35,7 @@ Nominal values read from `45nm_MGK.pm`:
 Datasets/
   NMOS_ON.csv  NMOS_OFF.csv  PMOS_ON.csv  PMOS_OFF.csv            original 10,000-sample datasets
   NMOS_ON_20k.csv  NMOS_OFF_20k.csv  PMOS_ON_20k.csv  PMOS_OFF_20k.csv   20,000-sample datasets used for training
+  NMOS_ON_gate_region.csv  PMOS_ON_gate_region.csv                  4,000 extra rows each for the ON models (gate operating region)
 Scripts/        generation and simulation scripts (table below)
 Netlists/       NMOS_ON.cir  NMOS_OFF.cir  PMOS_ON.cir  PMOS_OFF.cir   example single-transistor netlists (deliverable 2)
 Data_Check/     data_check.ipynb and its outputs (Kirchhoff check, trend plots, dataset summary)
@@ -70,6 +71,7 @@ currents to 6 digits); the run that produced the committed files reproduced them
 | `generate_nmos_20k.py` | NMOS 20k datasets (ON and OFF) |
 | `generate_pmos_20k.py` | PMOS 20k datasets (ON and OFF) |
 | `write_example_netlists.py` | writes `Netlists/<case>.cir` (the netlist of row 1 of each dataset) and checks it in ngspice against the CSV |
+| `generate_gate_region_data.py` | `NMOS_ON_gate_region.csv`, `PMOS_ON_gate_region.csv`: extra ON-model training rows where ON transistors operate inside gates (below) |
 
 Run everything from the repository root (the netlists include `45nm_MGK.pm` by relative path):
 
@@ -77,7 +79,21 @@ Run everything from the repository root (the netlists include `45nm_MGK.pm` by r
 python3 Data_Generation/Scripts/generate_nmos_20k.py      # 2 × 20,000 simulations, about 20 min here (8 cores, one simulation at a time)
 python3 Data_Generation/Scripts/generate_pmos_20k.py
 python3 Data_Generation/Scripts/write_example_netlists.py # the four example netlists (seconds)
+python3 Data_Generation/Scripts/generate_gate_region_data.py   # 2 × 4,000 simulations, about 15 s with 6 processes
 ```
+
+## Gate-region rows for the ON models (`*_ON_gate_region.csv`)
+
+Inside a static CMOS gate an ON transistor connects a node to a rail: both terminals sit near the same rail and |Vds| is only
+20 µV – 1 mV. Uniformly drawn vd and vs (section 4) almost never produce such points (|Vds| < 1 mV in 0.2 % of the rows), and
+there the ON models' gate and body currents were 2 – 7 % off, which set most of the gate-level error of Part B. These files add
+4,000 rows per ON case with VDD, temperature, W and the process parameters drawn as in section 4 and only vd / vs drawn
+differently: `vs` is near 0, near VDD or uniform (1/3 each; distance to the rail log-uniform in 0.1 µV – 0.45 V); `vd` is either
+on the diagonal (`vd = vs ± 10^U(−7, 0)` V) or drawn like `vs` (1/2 each). Same single-transistor netlist, own random draws
+(seeds 12175305 + 1000 / + 1002), no gate simulation result. One third of the rows have |Vds| < 1 mV. The training script applies
+the data-check rule (no zero current, Kirchhoff residual ≤ 1e-3 of the largest current); it keeps 3,915 NMOS_ON and 3,997 PMOS_ON
+rows — the others have all terminals within microvolts of each other, with currents at the solver's noise floor. The 10k and
+20k datasets (deliverable 1) are unchanged.
 
 ## Example netlists (`Netlists/`)
 

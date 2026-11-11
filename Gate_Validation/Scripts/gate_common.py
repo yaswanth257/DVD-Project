@@ -139,6 +139,56 @@ def netlist(gate, corner, model_include, combo=None):
     return "\n".join(lines)
 
 
+def compose_currents(gate, combo, currents, on, kcl=True):
+    """Gate leakage from the signed transistor currents of one input combination.
+
+    currents[name]: (n_corners, 4) array of id, ig, is, ib (+ = current out of the transistor); on[name]: ON / OFF.
+    kcl=True  -> the channel current of every ON transistor is solved from Kirchhoff's current law at the internal nodes
+                 (unknown u per ON transistor: id = u, is = -(u + ig + ib)); its ig, ib and all currents of OFF transistors
+                 are the model's. Parallel ON transistors get the minimum-norm split (only their sum enters the leakage).
+    kcl=False -> plain sum of the model currents.
+    Returns leak_vdd, leak_total (arrays, A; leak_total adds the input sources at logic 1) and, per internal node, the sum
+    of the model currents flowing into it before the Kirchhoff step (0 for a consistent set of currents)."""
+    g = GATES[gate]
+    bits = dict(zip(g["inputs"], combo))
+    internal = g["nodes"] + [g["out"]]
+    nets = {nm: (d, gt, s, "vdd" if typ == "pmos" else "0") for (nm, typ, d, gt, s, w) in g["transistors"]}
+    I = {nm: np.array(currents[nm], dtype=float, copy=True) for nm in nets}
+    n = len(next(iter(I.values())))
+    residual = {node: np.zeros(n) for node in internal}
+    for nm, ns in nets.items():
+        for t, net in enumerate(ns):
+            if net in residual:
+                residual[net] += I[nm][:, t]
+    if kcl:
+        unknown = [nm for nm in nets if on[nm]]
+        A, B = np.zeros((len(internal), len(unknown))), np.zeros((len(internal), n))
+        for i, node in enumerate(internal):
+            for nm, ns in nets.items():
+                for t, net in enumerate(ns):
+                    if net != node:
+                        continue
+                    if nm in unknown and t == 0:                    # drain current of an ON transistor: + u
+                        A[i, unknown.index(nm)] += 1
+                    elif nm in unknown and t == 2:                  # source current: -(u + ig + ib)
+                        A[i, unknown.index(nm)] -= 1
+                        B[i] += I[nm][:, 1] + I[nm][:, 3]
+                    else:
+                        B[i] -= I[nm][:, t]
+        U = np.linalg.lstsq(A, B, rcond=None)[0]
+        for j, nm in enumerate(unknown):
+            I[nm][:, 0] = U[j]
+            I[nm][:, 2] = -(U[j] + I[nm][:, 1] + I[nm][:, 3])
+    leak_vdd, leak_in = np.zeros(n), np.zeros(n)
+    for nm, ns in nets.items():
+        for t, net in enumerate(ns):
+            if net == "vdd":
+                leak_vdd -= I[nm][:, t]
+            elif net in bits and bits[net] == 1:
+                leak_in -= I[nm][:, t]
+    return leak_vdd, leak_vdd + leak_in, residual
+
+
 def spice_leak(vdd_src_current, input_src_currents, combo):
     """Leakage in A (positive = drawn from the supplies).
     leak_vdd   = current delivered by the VDD source only

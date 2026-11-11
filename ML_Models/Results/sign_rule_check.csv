@@ -1,6 +1,6 @@
 case,magnitudes,rows,all four signs right %,wrongly signed |I| / total |I|,largest wrongly signed current / its row max
 NMOS_ON,true magnitudes,20000,100.0,0.0,0.0
-NMOS_ON,final model,2000,99.9,5.72331035325094e-11,0.3306187746017235
+NMOS_ON,final model,2000,99.9,3.564956771122217e-12,0.1461610694125408
 NMOS_OFF,true magnitudes,20000,100.0,0.0,0.0
 NMOS_OFF,final model,2000,99.55000000000001,6.598116621488154e-06,0.03866417398695776
 PMOS_ON,true magnitudes,20000,100.0,0.0,0.0
