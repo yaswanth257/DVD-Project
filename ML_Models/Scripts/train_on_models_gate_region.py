@@ -1,10 +1,14 @@
-"""Train the final ON models (NMOS_ON, PMOS_ON): the Huber MLP recipe plus training rows from the gate operating region.
+"""Train the final models of the ON cases and the OFF cases: the Huber MLP recipe plus training rows from the gate operating region.
 
-    python3 ML_Models/Scripts/train_on_models_gate_region.py [--jobs 4]       (after export_huber_models.py; about 7 minutes)
+    python3 ML_Models/Scripts/train_on_models_gate_region.py [--cases ON|OFF|all] [--jobs 4]
+        (after export_huber_models.py; ON about 7 minutes, OFF about 10 minutes; default --cases ON)
 
 Why: inside a gate an ON transistor has both terminals near one rail and |Vds| of 20 uV - 1 mV, a region uniform sampling of
 vd / vs almost never covers; there its gate and body currents (ig, ib) were 2 - 7 % off and set most of the gate-level error.
 Data_Generation/Scripts/generate_gate_region_data.py adds 4,000 rows per ON case in that region.
+The OFF models (--cases OFF) get 4,000 rows per case from the region OFF transistors occupy in gates (drain and source at
+opposite rails, at the same rail, or one at a rail and one at a stack node): the Part B diagnostic put the remaining gate-level
+error in the channel current of OFF transistors at |Vds| > 0.1 V, where uniform sampling has almost no rows.
 
 Recipe (as the other final models): MLP 128-64-32-16, SiLU, Huber loss beta = 0.002, AdamW lr 1e-2, 3,000 epochs, the epoch
 with the lowest validation loss is kept. Data: the 16,000 training rows of the 80 / 10 / 10 split + 80 % of the gate-region rows
@@ -14,7 +18,7 @@ In gate-region rows with |vd - vs| < 10 mV, id and is are left out of the loss: 
 which the gate composition takes from Kirchhoff's law instead (Gate_Validation/Scripts/gate_common.compose_currents).
 Two training seeds per case; the one with the lower sum of the validation median errors (validation rows + gate-region
 validation rows) is installed as Saved_Models/<case>.pt. Writes Results/gate_region/runs/<case>__seed<s>.json and
-Results/validation_comparison_GATE_REGION.csv. The OFF models are not changed.
+Results/validation_comparison_GATE_REGION.csv (rows of the cases trained now replace the old rows; the others stay).
 """
 import argparse
 import copy
@@ -30,7 +34,8 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 ROOT = HERE.parents[1]
-CASES, SEEDS = ["NMOS_ON", "PMOS_ON"], [12175305, 12175306]
+CASE_GROUPS = {"ON": ["NMOS_ON", "PMOS_ON"], "OFF": ["NMOS_OFF", "PMOS_OFF"]}
+SEEDS = [12175305, 12175306]
 HIDDEN, BETA, VDS_MASK, EPOCHS = (128, 64, 32, 16), 0.002, 1e-2, 3000
 MODEL_NAME = "MLP (Huber loss) + gate-region data"
 METRICS = ["R2 (log|I|)", "mean err %", "median err %", "95th pct err %"]
@@ -126,7 +131,9 @@ def train(job):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--jobs", type=int, default=4)
+    ap.add_argument("--cases", choices=["ON", "OFF", "all"], default="ON")
     args = ap.parse_args()
+    CASES = CASE_GROUPS["ON"] + CASE_GROUPS["OFF"] if args.cases == "all" else CASE_GROUPS[args.cases]
     with ProcessPoolExecutor(max_workers=args.jobs) as pool:
         results = list(pool.map(train, [(c, s) for c in CASES for s in SEEDS]))
     rows = []
@@ -142,5 +149,8 @@ if __name__ == "__main__":
         for current in ["id", "ig", "is", "ib", "average"]:
             rows.append({"case": case, "model": MODEL_NAME, "current": current,
                          **{k: best["val"][current][k] for k in METRICS}, "train time s": best["seconds"]})
-    pd.DataFrame(rows).to_csv(ROOT / "ML_Models" / "Results" / "validation_comparison_GATE_REGION.csv", index=False)
+    csv = ROOT / "ML_Models" / "Results" / "validation_comparison_GATE_REGION.csv"
+    old = pd.read_csv(csv) if csv.exists() else pd.DataFrame()
+    old = old[~old["case"].isin(CASES)] if len(old) else old                      # keep the rows of the cases not trained now
+    pd.concat([old, pd.DataFrame(rows)], ignore_index=True).to_csv(csv, index=False)
     print("written ML_Models/Results/validation_comparison_GATE_REGION.csv")

@@ -7,7 +7,12 @@ Every number below is reproduced by `ML_Models/Results/nmos_off_study.ipynb` (tr
 > **Final models.** This analysis was made on the earlier models of the training notebooks (MSE loss; "official" below). Its
 > outcome, the Huber loss (section 4.1), made the Huber MLPs the final models: `ML_Models/Saved_Models/<case>.pt`, evaluated in
 > `ML_Models/Results/model_evaluation.ipynb`. Sections 1 – 3 describe the earlier NMOS_OFF model; the cause they identify (near-cancelled
-> currents) is the same for the final model (test median 0.13 %, 95th percentile 0.99 %, mean 5.73 %, set by the same row 13855).
+> currents) is the same for the final model. Sections 4.1 and 5 describe the Huber models of the follow-up study (test median 0.13 %,
+> 95th percentile 0.99 %, mean 5.73 %, set by the row 13855). After the gate-level evaluation (Part B) all four models were re-trained with
+> 4,000 extra rows each from the region where the transistor operates inside gates (`ML_Models/README.md`, "Final models"); for NMOS_OFF
+> that gives test median 0.14 %, 95th percentile 1.30 %, mean 3.07 % (the same row 13855 now has error 1.5e4 % instead of 3.9e4 %), and
+> halves the gate-level error (Part B median 0.34 % → 0.17 %). The extra rows are not drawn from the section 4 distribution and were
+> chosen after looking at the gate-level results; the report should say so.
 
 ## 1. What needs explaining
 

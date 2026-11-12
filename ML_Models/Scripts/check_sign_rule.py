@@ -1,10 +1,10 @@
-"""Check the current-sign rule of leakage_model.SIGN_RULES (used by LeakageModel.predict_signed for Parts B and C).
+"""Check the current-sign rule of leakage_model.SIGN_RULES (used by LeakageModel.predict_signed for Part B).
 
     python3 ML_Models/Scripts/check_sign_rule.py        (from the repository root; writes ML_Models/Results/sign_rule_check.csv)
 
 1. The three fixed signs of every case (ig, ib, and the fixed drain / source terminal) on all 20,000 rows of each dataset.
 2. The full rule (fixed signs + Kirchhoff for the remaining terminal) with the TRUE magnitudes, all rows.
-3. The full rule with the PREDICTED magnitudes of the final models (Saved_Models/<case>.pt), test set (what Parts B / C will see).
+3. The full rule with the PREDICTED magnitudes of the final models (Saved_Models/<case>.pt), test set (what Part B will see).
 """
 import sys
 from pathlib import Path

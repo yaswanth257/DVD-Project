@@ -13,7 +13,21 @@ other datasets: Datasets/NMOS_ON_gate_region.csv, Datasets/PMOS_ON_gate_region.c
 (ML_Models/Scripts/train_on_models_gate_region.py) applies the data-check rule (no zero current, Kirchhoff residual <= 1e-3 of the
 largest current), which removes about 2 % of the NMOS_ON rows: transistors with all terminals within microvolts of each other,
 whose currents are at the solver's noise floor.
+
+OFF cases (NMOS_OFF, PMOS_OFF). The Part B diagnostic showed that the remaining gate-level error sits in the channel current of
+OFF transistors at |Vds| > 0.1 V, at the corner of the (vd, vs) square that gates use: of 8,400 OFF-transistor instances in the
+18 gate cases x 200 corners, 52 % have drain and source at opposite rails (|Vds| = VDD), 19 % both at the same rail, 29 % one
+terminal at a rail and the other at a series-stack node, while uniform sampling puts about 8 of 20,000 rows within 2 % of VDD of
+the opposite-rail corner. 4,000 extra rows per OFF case, everything as in section 4 except vd / vs, drawn for NMOS_OFF as
+    45 % opposite rails      vd = VDD - o, vs = o'              (o, o' = 10^U(-7, log10 0.45) V)
+    20 % same rail           vs = o, vd = vs +- 10^U(-7, 0) V   (mirrored into [0, VDD])
+    20 % source at a rail    vs = o, vd uniform in [0, VDD]     (drain at a stack node)
+    15 % drain at a rail     vd = VDD - o, vs uniform in [0, VDD]  (source at a stack node)
+and mirrored (vd, vs) -> (VDD - vd, VDD - vs) for PMOS_OFF. Output: Datasets/NMOS_OFF_gate_region.csv, PMOS_OFF_gate_region.csv.
+
+    python3 Data_Generation/Scripts/generate_gate_region_data.py [--cases ON|OFF|all]     (default all; ON files are the ones of Part B)
 """
+import argparse
 import os
 import re
 import shutil
@@ -31,7 +45,8 @@ OUT_DIR = ROOT / "Data_Generation" / "Datasets"
 NGSPICE_CMD = shutil.which("ngspice_con") or "ngspice"
 SEED, NOMINAL_VDD, LMIN, ROWS = 12175305, 0.9, 45e-9, 4000
 PROC = ["vth0", "toxe", "ndep", "u0", "xj"]
-CASES = {"NMOS_ON": ("nmos", 1, 0, SEED + 1000), "PMOS_ON": ("pmos", 0, 1, SEED + 1002)}   # type, vg / VDD, vb / VDD, generator seed
+CASES = {"NMOS_ON": ("nmos", 1, 0, SEED + 1000), "PMOS_ON": ("pmos", 0, 1, SEED + 1002),     # type, vg / VDD, vb / VDD, generator seed
+         "NMOS_OFF": ("nmos", 0, 0, SEED + 1001), "PMOS_OFF": ("pmos", 1, 1, SEED + 1003)}
 COLUMNS = ["vdd", "temp", "w", "vd", "vs", "vg", "vb", *PROC, "id", "ig", "is", "ib"]
 
 
@@ -69,6 +84,26 @@ def draw(typ, n, rng, nom):
     vd_diagonal = vs + rng.choice([-1.0, 1.0], n) * 10 ** rng.uniform(-7, 0, n)
     vd = np.where(diagonal, vd_diagonal, terminal(rng, vdd))
     df["vd"], df["vs"] = np.clip(mirror(vd, vdd), 0, vdd), vs
+    for p in PROC:
+        lo, hi = sorted((0.9 * nom[typ][p], 1.1 * nom[typ][p]))
+        df[p] = rng.uniform(lo, hi, n)
+    return df
+
+
+def draw_off(typ, n, rng, nom):
+    """OFF cases: (vd, vs) in the cells of the square that OFF transistors occupy inside gates (see the docstring)."""
+    vdd = rng.uniform(0.9 * NOMINAL_VDD, 1.1 * NOMINAL_VDD, n)
+    df = pd.DataFrame({"vdd": vdd, "temp": rng.uniform(-40, 125, n), "w": rng.uniform(LMIN, 8 * LMIN, n)})
+    near = lambda: 10 ** rng.uniform(-7, np.log10(0.45), n)             # distance from a rail
+    cell, u_mid = rng.random(n), rng.uniform(0, 1, n) * vdd
+    o1, o2 = near(), near()
+    diag = o1 + rng.choice([-1.0, 1.0], n) * 10 ** rng.uniform(-7, 0, n)
+    vd = np.select([cell < 0.45, cell < 0.65, cell < 0.85], [vdd - o1, diag, u_mid], default=vdd - o1)
+    vs = np.select([cell < 0.45, cell < 0.65, cell < 0.85], [o2, o1, o1], default=u_mid)
+    vd, vs = np.clip(mirror(vd, vdd), 0, vdd), np.clip(mirror(vs, vdd), 0, vdd)
+    if typ == "pmos":
+        vd, vs = vdd - vd, vdd - vs
+    df["vd"], df["vs"] = vd, vs
     for p in PROC:
         lo, hi = sorted((0.9 * nom[typ][p], 1.1 * nom[typ][p]))
         df[p] = rng.uniform(lo, hi, n)
@@ -114,10 +149,15 @@ echo RESULT $&id_val $&ig_val $&is_val $&ib_val
 
 
 if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cases", choices=["ON", "OFF", "all"], default="all")
+    args = ap.parse_args()
     nom = nominals()
     with Pool(6) as pool:
         for case, (typ, g_on, b_on, seed) in CASES.items():
-            df = draw(typ, ROWS, np.random.default_rng(seed), nom)
+            if args.cases != "all" and not case.endswith("_" + args.cases):
+                continue
+            df = (draw_off if case.endswith("_OFF") else draw)(typ, ROWS, np.random.default_rng(seed), nom)
             df["vg"], df["vb"] = g_on * df["vdd"], b_on * df["vdd"]
             currents = np.array(pool.map(simulate, [(typ, r) for _, r in df.iterrows()], chunksize=50))
             df[["id", "ig", "is", "ib"]] = currents

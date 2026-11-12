@@ -3,7 +3,7 @@
 Gate leakage predicted from the four transistor models, compared with transistor-level ngspice simulations of the gates.
 18 gate / input cases (INV: 2, NAND2, NOR2, AND2, OR2: 4 each) × 200 PVT corners = **3,600 operating points**.
 
-**Result (total leakage, all 3,600 points): median error 0.34 %, 95th percentile 1.64 %, bias +0.03 %, mean accuracy 99.47 %.**
+**Result (total leakage, all 3,600 points): median error 0.17 %, 95th percentile 0.63 %, bias −0.04 %, mean accuracy 99.77 %.**
 
 ## Workflow
 
@@ -11,7 +11,7 @@ Run from the repository root, in order (seed `12175305`; `ngspice` must be on th
 
 | Step | Script | Output |
 |---|---|---|
-| 1 | `01_generate_corners.py` | `Results/corners.csv` — 200 PVT corners (also used by Part C) |
+| 1 | `01_generate_corners.py` | `Results/corners.csv` — 200 PVT corners |
 | 2 | `02_write_gate_netlists.py` | `Netlists/{INV,NAND2,NOR2,AND2,OR2}.cir` — example gate netlists (deliverable 2) |
 | 3 | `03_run_spice_gates.py` | `Results/gate_spice_results.csv` — SPICE leakage, internal-node and output voltages |
 | 4 | `04_predict_ml_gates.py` | `Results/gate_ml_results.csv` — ML leakage from the four transistor models |
@@ -46,9 +46,10 @@ Shared definitions (topology, sizing, corners, netlists, leakage composition) ar
    error 8 – 93 % for its `id` / `is`). Taking it from Kirchhoff uses only predicted currents and the circuit's node equations.
 4. Leakage = − Σ currents at terminals on the VDD net (− Σ at terminals on inputs at logic 1, for *total*).
 
-The ON transistor models were also trained with 4,000 extra single-transistor rows per ON case from the gate operating region
-(both terminals near a rail, |Vds| down to 0.1 µV; `Data_Generation/Scripts/generate_gate_region_data.py`, own random draws,
-no gate result used). Uniform sampling of vd / vs (section 4) almost never produces such points, and there the ON models' `ig`
+All four transistor models were also trained with 4,000 extra single-transistor rows per case from the region where the transistor
+operates inside gates (`Data_Generation/Scripts/generate_gate_region_data.py`, own random draws, no gate result used). ON models:
+both terminals near a rail, |Vds| down to 0.1 µV. OFF models: drain and source at opposite rails, at the same rail, or one at a rail
+and one at a series-stack node (the cells that OFF transistors occupy in these gates). Uniform sampling of vd / vs (section 4) almost never produces such points, and there the ON models' `ig`
 and `ib` — the currents the Kirchhoff composition does use — were 2 – 7 % off; now 0.2 – 0.4 %
 (`ML_Models/README.md`, "Final models"). The gate SPICE results of step 3 are used for evaluation only.
 
@@ -56,36 +57,37 @@ and `ib` — the currents the Kirchhoff composition does use — were 2 – 7 % 
 
 | Leakage | SPICE median (A) | ML median (A) | Bias | Median error | 95th pct error | Mean accuracy |
 |---|---:|---:|---:|---:|---:|---:|
-| total | 1.552 × 10⁻⁷ | 1.552 × 10⁻⁷ | +0.03 % | 0.34 % | 1.64 % | 99.47 % |
-| vdd | 1.201 × 10⁻⁷ | 1.198 × 10⁻⁷ | +0.07 % | 0.45 % | 2.41 % | 99.26 % |
+| total | 1.552 × 10⁻7 | 1.550 × 10⁻7 | -0.04 % | 0.17 % | 0.63 % | 99.77 % |
+| vdd | 1.201 × 10⁻7 | 1.199 × 10⁻7 | -0.03 % | 0.18 % | 0.85 % | 99.71 % |
 
 Error = ML / SPICE − 1; bias = median signed error; mean accuracy = 100 % − mean |error|. Per gate and input, total leakage
 (200 corners each; `Results/gate_results_table_total.csv`, the *vdd* table in `gate_results_table_vdd.csv`):
 
 | Gate | Input | SPICE median (A) | ML median (A) | Bias | Median error | 95th pct error | Mean accuracy |
 |---|---|---:|---:|---:|---:|---:|---:|
-| INV | 0 | 6.669e-08 | 6.624e-08 | −0.12 % | 0.42 % | 1.68 % | 99.36 % |
-| INV | 1 | 8.163e-08 | 8.198e-08 | +0.12 % | 0.54 % | 1.94 % | 99.29 % |
-| NAND2 | 00 | 9.277e-08 | 9.311e-08 | −0.04 % | 0.21 % | 0.64 % | 99.75 % |
-| NAND2 | 01 | 1.356e-07 | 1.351e-07 | +0.00 % | 0.32 % | 2.38 % | 99.37 % |
-| NAND2 | 10 | 7.543e-08 | 7.524e-08 | +0.05 % | 0.32 % | 1.38 % | 99.50 % |
-| NAND2 | 11 | 2.136e-07 | 2.140e-07 | +0.13 % | 0.42 % | 1.75 % | 99.39 % |
-| NOR2 | 00 | 2.100e-07 | 2.081e-07 | −0.18 % | 0.35 % | 1.37 % | 99.48 % |
-| NOR2 | 01 | 2.443e-07 | 2.438e-07 | +0.03 % | 0.32 % | 1.88 % | 99.49 % |
-| NOR2 | 10 | 1.141e-07 | 1.139e-07 | +0.03 % | 0.36 % | 1.38 % | 99.49 % |
-| NOR2 | 11 | 7.791e-08 | 7.859e-08 | +0.26 % | 0.36 % | 2.82 % | 99.18 % |
-| AND2 | 00 | 1.977e-07 | 1.970e-07 | +0.06 % | 0.25 % | 1.16 % | 99.62 % |
-| AND2 | 01 | 2.197e-07 | 2.205e-07 | +0.03 % | 0.34 % | 1.82 % | 99.47 % |
-| AND2 | 10 | 1.548e-07 | 1.552e-07 | +0.08 % | 0.38 % | 1.40 % | 99.50 % |
-| AND2 | 11 | 2.791e-07 | 2.797e-07 | +0.13 % | 0.38 % | 1.52 % | 99.47 % |
-| OR2 | 00 | 3.135e-07 | 3.123e-07 | −0.12 % | 0.31 % | 1.18 % | 99.58 % |
-| OR2 | 01 | 3.124e-07 | 3.124e-07 | +0.01 % | 0.36 % | 1.60 % | 99.51 % |
-| OR2 | 10 | 1.775e-07 | 1.778e-07 | −0.00 % | 0.37 % | 1.38 % | 99.51 % |
-| OR2 | 11 | 1.452e-07 | 1.472e-07 | +0.07 % | 0.26 % | 2.38 % | 99.43 % |
+| INV | 0 | 6.669e-08 | 6.660e-08 | +0.01 % | 0.18 % | 0.68 % | 99.77 % |
+| INV | 1 | 8.163e-08 | 8.179e-08 | -0.00 % | 0.15 % | 0.45 % | 99.81 % |
+| NAND2 | 00 | 9.277e-08 | 9.316e-08 | -0.09 % | 0.20 % | 0.69 % | 99.75 % |
+| NAND2 | 01 | 1.356e-07 | 1.355e-07 | +0.09 % | 0.16 % | 0.52 % | 99.78 % |
+| NAND2 | 10 | 7.543e-08 | 7.531e-08 | +0.13 % | 0.21 % | 1.09 % | 99.66 % |
+| NAND2 | 11 | 2.136e-07 | 2.136e-07 | +0.01 % | 0.16 % | 0.54 % | 99.80 % |
+| NOR2 | 00 | 2.100e-07 | 2.093e-07 | -0.11 % | 0.23 % | 0.74 % | 99.72 % |
+| NOR2 | 01 | 2.443e-07 | 2.435e-07 | -0.04 % | 0.18 % | 0.64 % | 99.76 % |
+| NOR2 | 10 | 1.141e-07 | 1.140e-07 | -0.05 % | 0.15 % | 0.55 % | 99.80 % |
+| NOR2 | 11 | 7.791e-08 | 7.744e-08 | -0.24 % | 0.35 % | 1.23 % | 99.55 % |
+| AND2 | 00 | 1.977e-07 | 1.971e-07 | -0.06 % | 0.14 % | 0.43 % | 99.82 % |
+| AND2 | 01 | 2.197e-07 | 2.200e-07 | -0.02 % | 0.12 % | 0.43 % | 99.85 % |
+| AND2 | 10 | 1.548e-07 | 1.549e-07 | -0.02 % | 0.13 % | 0.45 % | 99.83 % |
+| AND2 | 11 | 2.791e-07 | 2.786e-07 | -0.01 % | 0.12 % | 0.47 % | 99.83 % |
+| OR2 | 00 | 3.135e-07 | 3.123e-07 | -0.18 % | 0.22 % | 0.63 % | 99.75 % |
+| OR2 | 01 | 3.124e-07 | 3.124e-07 | -0.05 % | 0.15 % | 0.53 % | 99.79 % |
+| OR2 | 10 | 1.775e-07 | 1.772e-07 | -0.05 % | 0.11 % | 0.38 % | 99.85 % |
+| OR2 | 11 | 1.452e-07 | 1.456e-07 | -0.12 % | 0.18 % | 0.70 % | 99.76 % |
 
-Most accurate: NAND2 `00` (0.21 %), AND2 `00`, OR2 `11`; least accurate: INV `1` (0.54 %) and the 95th percentile of NOR2 `11`
-(2.8 %). On the *vdd* definition NOR2 `11` is the weakest case (median 1.9 %): its VDD current is only 1.3e-8 A, the leakage
-through two series OFF PMOS (about 10× below the median case), so the same absolute model error is a larger relative one.
+Most accurate: OR2 `10` (0.11 %), AND2 `01` / `11` (0.12 %); least accurate: NOR2 `11` (median 0.35 %, 95th percentile 1.23 %) and
+NAND2 `10` (95th percentile 1.09 %). On the *vdd* definition NOR2 `11` is the weakest case (median 0.96 %, 95th percentile 3.1 %): its
+VDD current is only 1.3e-8 A, the leakage through two series OFF PMOS (about 10× below the median case), so the same absolute
+model error is a larger relative one. All other cases are ≤ 0.23 % (median).
 
 ## How the error was brought down
 
@@ -93,18 +95,39 @@ through two series OFF PMOS (about 10× below the median case), so the same abso
 |---|---:|---:|---:|---:|
 | Plain sum of the model currents, earlier ON models (first version of Part B) | −3.31 % | 4.22 % | 13.87 % | 94.59 % |
 | + Kirchhoff for the ON channels | +1.33 % | 1.42 % | 7.29 % | 97.71 % |
-| + ON models trained with gate-region rows (final) | **+0.03 %** | **0.34 %** | **1.64 %** | **99.47 %** |
-| (plain sum with the final models, for comparison) | −0.32 % | 3.20 % | 17.98 % | 94.61 % |
+| + ON models trained with gate-region rows | +0.03 % | 0.34 % | 1.64 % | 99.47 % |
+| + OFF models trained with gate-region rows (final) | **−0.04 %** | **0.17 %** | **0.63 %** | **99.77 %** |
+| (plain sum with the final models, for comparison) | −0.33 % | 3.00 % | 17.98 % | 94.77 % |
 
 - **Step 6 shows where the error came from.** Summing standalone single-transistor SPICE currents, at the voltages each transistor
   sees inside the gate, reproduces the gate SPICE leakage to a median of 0.035 % (the composition and the signs are right). The
-  model errors inside gates are small for |Vds| > 0.1 V (OFF: 0.4 – 1 %) and large only for ON transistors at |Vds| < 1 mV.
+  model errors inside gates are now small for |Vds| > 0.1 V (OFF transistors at |Vds| > 0.5 V: median 0.24 % NMOS / 0.19 % PMOS,
+  95th percentile 0.94 % / 0.59 %; before the OFF gate-region rows 0.41 % / 0.67 % and 3.3 % / 2.1 %) and large only for ON
+  transistors at |Vds| < 1 mV (Kirchhoff takes their channel current) and for the untrained `id` / `is` of OFF transistors at
+  |Vds| < 10 mV (above).
 - **The first version's errors followed one pattern:** they were large exactly when an ON transistor sits on the VDD net (INV `0`,
   NAND2 `00`, NOR2 `00` / `01`: 8 – 12 %) and small otherwise (≤ 1.8 %), because the supply current then flows through that ON
   channel.
 - **After Kirchhoff, the ON transistors' `ig` / `ib` were the remaining source:** replacing only those with single-transistor SPICE
   values (12 corners) brought the median from 1.74 % to 0.27 %. The gate-region rows fixed exactly that (median `ig` / `ib` error at
   |Vds| < 1 mV: NMOS 1.8 / 2.4 % → 0.19 / 0.27 %, PMOS 4.4 / 6.6 % → 0.35 / 0.29 %).
+- **Then the OFF channel currents were the remaining source.** On the 12 diagnostic corners (216 points) with the ON-fixed models, the
+  true (single-transistor SPICE) values were swapped in for one group of model currents at a time and the gate leakage recomposed:
+
+  | Replaced by SPICE values | median error | 95th pct | mean |
+  |---|---:|---:|---:|
+  | nothing (models after the ON fix) | 0.41 % | 1.34 % | 0.53 % |
+  | `ig` / `ib` of the ON transistors | 0.27 % | 1.38 % | 0.46 % |
+  | all currents of OFF transistors at \|Vds\| > 0.1 V | 0.12 % | 0.62 % | 0.19 % |
+  | all currents of OFF transistors at \|Vds\| < 0.1 V | 0.38 % | 1.34 % | 0.50 % |
+  | `ig` / `ib` of the OFF transistors only | 0.39 % | 1.36 % | 0.52 % |
+
+  The OFF transistors' channel current at high |Vds| is what the gate leaks. Gates place OFF transistors at the corner of the (vd, vs)
+  square (52 % of the 8,400 OFF instances: drain and source at opposite rails, 19 % at the same rail, 29 % one at a rail and one at a
+  stack node), where 20,000 uniform rows have about 8 rows within 2 % of VDD of the opposite-rail corner. 4,000 rows per OFF case from
+  these cells (`generate_gate_region_data.py --cases OFF`) halved the gate error again: median 0.34 % → 0.17 %, 95th percentile
+  1.64 % → 0.63 %. The `id` / `is` of the OFF models at |Vds| < 10 mV are, like the ON models', not in the loss and are now much worse
+  than before (median error 76 – 134 % on the few such instances), which the swap table shows does not matter for the leakage.
 
 ## Files
 

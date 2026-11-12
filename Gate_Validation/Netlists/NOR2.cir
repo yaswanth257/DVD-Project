@@ -1,11 +1,11 @@
 * NOR2 transistor-level netlist, leakage at the DC operating point
-* corner 0: VDD = 0.9476988382906772 V, T = -15.17203315358144 C, inputs A,B = 00
+* corner 0: VDD = 0.9476988382906772 V, T = -15.17203315358145 C, inputs A,B = 00
 * all NMOS share the n_* process draw and all PMOS the p_* draw (altermod below); L = 45 nm
 .include "../../45nm_MGK.pm"
 
 .options gmin=1e-18 abstol=1e-18 reltol=1e-6 vntol=1e-9
 
-.temp -15.17203315358144
+.temp -15.17203315358145
 
 Vdd vdd 0 DC 0.9476988382906772
 VA A 0 DC 0
@@ -22,12 +22,12 @@ set numdgt=15
 altermod nmos vth0 = 0.3516567680650164
 altermod nmos toxe = 9.348294576189222e-10
 altermod nmos ndep = 6.771478713660292e+18
-altermod nmos u0 = 0.0277616711781986
+altermod nmos u0 = 0.02776167117819865
 altermod nmos xj = 1.425192901868327e-08
-altermod pmos vth0 = -0.2347711950807913
+altermod pmos vth0 = -0.2347711950807914
 altermod pmos toxe = 9.909264394203287e-10
 altermod pmos ndep = 2.69912950261189e+18
-altermod pmos u0 = 0.0040609470050882
+altermod pmos u0 = 0.00406094700508827
 altermod pmos xj = 1.358003403004789e-08
 
 op

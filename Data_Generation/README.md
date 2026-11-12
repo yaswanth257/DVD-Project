@@ -36,6 +36,7 @@ Datasets/
   NMOS_ON.csv  NMOS_OFF.csv  PMOS_ON.csv  PMOS_OFF.csv            original 10,000-sample datasets
   NMOS_ON_20k.csv  NMOS_OFF_20k.csv  PMOS_ON_20k.csv  PMOS_OFF_20k.csv   20,000-sample datasets used for training
   NMOS_ON_gate_region.csv  PMOS_ON_gate_region.csv                  4,000 extra rows each for the ON models (gate operating region)
+  NMOS_OFF_gate_region.csv  PMOS_OFF_gate_region.csv                4,000 extra rows each for the OFF models (gate operating region)
 Scripts/        generation and simulation scripts (table below)
 Netlists/       NMOS_ON.cir  NMOS_OFF.cir  PMOS_ON.cir  PMOS_OFF.cir   example single-transistor netlists (deliverable 2)
 Data_Check/     data_check.ipynb and its outputs (Kirchhoff check, trend plots, dataset summary)
@@ -71,7 +72,7 @@ currents to 6 digits); the run that produced the committed files reproduced them
 | `generate_nmos_20k.py` | NMOS 20k datasets (ON and OFF) |
 | `generate_pmos_20k.py` | PMOS 20k datasets (ON and OFF) |
 | `write_example_netlists.py` | writes `Netlists/<case>.cir` (the netlist of row 1 of each dataset) and checks it in ngspice against the CSV |
-| `generate_gate_region_data.py` | `NMOS_ON_gate_region.csv`, `PMOS_ON_gate_region.csv`: extra ON-model training rows where ON transistors operate inside gates (below) |
+| `generate_gate_region_data.py` | `{NMOS,PMOS}_{ON,OFF}_gate_region.csv`: extra training rows where the transistors operate inside gates (below); `--cases ON|OFF|all` |
 
 Run everything from the repository root (the netlists include `45nm_MGK.pm` by relative path):
 
@@ -79,10 +80,10 @@ Run everything from the repository root (the netlists include `45nm_MGK.pm` by r
 python3 Data_Generation/Scripts/generate_nmos_20k.py      # 2 × 20,000 simulations, about 20 min here (8 cores, one simulation at a time)
 python3 Data_Generation/Scripts/generate_pmos_20k.py
 python3 Data_Generation/Scripts/write_example_netlists.py # the four example netlists (seconds)
-python3 Data_Generation/Scripts/generate_gate_region_data.py   # 2 × 4,000 simulations, about 15 s with 6 processes
+python3 Data_Generation/Scripts/generate_gate_region_data.py   # 4 × 4,000 simulations (--cases ON or OFF for two of them); ON about 15 s with 6 processes, OFF about 5 min
 ```
 
-## Gate-region rows for the ON models (`*_ON_gate_region.csv`)
+## Gate-region rows (`*_ON_gate_region.csv`, `*_OFF_gate_region.csv`)
 
 Inside a static CMOS gate an ON transistor connects a node to a rail: both terminals sit near the same rail and |Vds| is only
 20 µV – 1 mV. Uniformly drawn vd and vs (section 4) almost never produce such points (|Vds| < 1 mV in 0.2 % of the rows), and
@@ -92,8 +93,19 @@ differently: `vs` is near 0, near VDD or uniform (1/3 each; distance to the rail
 on the diagonal (`vd = vs ± 10^U(−7, 0)` V) or drawn like `vs` (1/2 each). Same single-transistor netlist, own random draws
 (seeds 12175305 + 1000 / + 1002), no gate simulation result. One third of the rows have |Vds| < 1 mV. The training script applies
 the data-check rule (no zero current, Kirchhoff residual ≤ 1e-3 of the largest current); it keeps 3,915 NMOS_ON and 3,997 PMOS_ON
-rows — the others have all terminals within microvolts of each other, with currents at the solver's noise floor. The 10k and
-20k datasets (deliverable 1) are unchanged.
+rows — the others have all terminals within microvolts of each other, with currents at the solver's noise floor.
+
+OFF cases. Once the ON models were fixed, the gate-level error that remained sat in the channel current of OFF transistors at
+|Vds| > 0.1 V (see `Gate_Validation/README.md`). Gates put OFF transistors at the corner of the (vd, vs) square: of the 8,400
+OFF-transistor instances of the 18 gate cases × 200 corners, 52 % have drain and source at opposite rails, 19 % both at the same
+rail and 29 % one at a rail and one at a series-stack node, while the 20,000 uniform rows contain about 8 rows within 2 % of VDD of
+the opposite-rail corner. The OFF files add 4,000 rows per case, again with everything as in section 4 except vd / vs; for
+NMOS_OFF (PMOS_OFF mirrored, vd → VDD − vd, vs → VDD − vs): 45 % opposite rails (`vd = VDD − o`, `vs = o'`), 20 % same rail
+(`vs = o`, `vd = vs ± 10^U(−7, 0)` V), 20 % `vs = o` with `vd` uniform, 15 % `vd = VDD − o` with `vs` uniform; the distance `o`
+to a rail is log-uniform in 0.1 µV – 0.45 V. Own random draws (seeds 12175305 + 1001 / + 1003), no gate simulation result. All
+4,000 NMOS_OFF rows and 3,911 PMOS_OFF rows pass the data-check rule above. These rows are not drawn from the section 4
+distribution and were chosen after looking at the gate-level evaluation; the report states this. The 10k and 20k datasets
+(deliverable 1) are unchanged.
 
 ## Example netlists (`Netlists/`)
 
