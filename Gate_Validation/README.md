@@ -3,7 +3,7 @@
 Gate leakage predicted from the four transistor models, compared with transistor-level ngspice simulations of the gates.
 18 gate / input cases (INV: 2, NAND2, NOR2, AND2, OR2: 4 each) × 200 PVT corners = **3,600 operating points**.
 
-**Result (total leakage, all 3,600 points): median error 0.17 %, 95th percentile 0.63 %, bias −0.04 %, mean accuracy 99.77 %.**
+**Result (total leakage, all 3,600 points): median error 0.18 %, 95th percentile 0.75 %, bias −0.07 %, mean accuracy 99.74 %.**
 
 ## Workflow
 
@@ -57,8 +57,8 @@ and `ib` — the currents the Kirchhoff composition does use — were 2 – 7 % 
 
 | Leakage | SPICE median (A) | ML median (A) | Bias | Median error | 95th pct error | Mean accuracy |
 |---|---:|---:|---:|---:|---:|---:|
-| total | 1.552 × 10⁻7 | 1.550 × 10⁻7 | -0.04 % | 0.17 % | 0.63 % | 99.77 % |
-| vdd | 1.201 × 10⁻7 | 1.199 × 10⁻7 | -0.03 % | 0.18 % | 0.85 % | 99.71 % |
+| total | 1.557 × 10⁻7 | 1.556 × 10⁻7 | -0.07 % | 0.18 % | 0.75 % | 99.74 % |
+| vdd | 1.209 × 10⁻7 | 1.206 × 10⁻7 | -0.10 % | 0.22 % | 1.02 % | 99.66 % |
 
 Error = ML / SPICE − 1; bias = median signed error; mean accuracy = 100 % − mean |error|. Per gate and input, total leakage
 (200 corners each; `Results/gate_results_table_total.csv`, the *vdd* table in `gate_results_table_vdd.csv`):

@@ -45,8 +45,8 @@ OUT_DIR = ROOT / "Data_Generation" / "Datasets"
 NGSPICE_CMD = shutil.which("ngspice_con") or "ngspice"
 SEED, NOMINAL_VDD, LMIN, ROWS = 12175305, 0.9, 45e-9, 4000
 PROC = ["vth0", "toxe", "ndep", "u0", "xj"]
-CASES = {"NMOS_ON": ("nmos", 1, 0, SEED + 1000), "PMOS_ON": ("pmos", 0, 1, SEED + 1002),     # type, vg / VDD, vb / VDD, generator seed
-         "NMOS_OFF": ("nmos", 0, 0, SEED + 1001), "PMOS_OFF": ("pmos", 1, 1, SEED + 1003)}
+CASES = {"NMOS_ON": ("nmos", 1, 0, SEED), "PMOS_ON": ("pmos", 0, 1, SEED),     # type, vg / VDD, vb / VDD, generator seed
+         "NMOS_OFF": ("nmos", 0, 0, SEED), "PMOS_OFF": ("pmos", 1, 1, SEED)}
 COLUMNS = ["vdd", "temp", "w", "vd", "vs", "vg", "vb", *PROC, "id", "ig", "is", "ib"]
 
 

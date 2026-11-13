@@ -23,6 +23,7 @@ Results/validation_comparison_GATE_REGION.csv (rows of the cases trained now rep
 import argparse
 import copy
 import json
+import shutil
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -35,7 +36,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 ROOT = HERE.parents[1]
 CASE_GROUPS = {"ON": ["NMOS_ON", "PMOS_ON"], "OFF": ["NMOS_OFF", "PMOS_OFF"]}
-SEEDS = [12175305, 12175306]
+SEEDS = [12175305]
 HIDDEN, BETA, VDS_MASK, EPOCHS = (128, 64, 32, 16), 0.002, 1e-2, 3000
 MODEL_NAME = "MLP (Huber loss) + gate-region data"
 METRICS = ["R2 (log|I|)", "mean err %", "median err %", "95th pct err %"]
@@ -61,6 +62,12 @@ def load(case):
 
 def train(job):
     case, seed = job
+    run_json = OUT / "runs" / f"{case}__seed{seed}.json"
+    run_pt = OUT / "runs" / f"{case}__seed{seed}.pt"
+    if run_json.exists() and run_pt.exists():
+        print(f"{case} seed {seed}: already trained, loading from {run_json}", flush=True)
+        shutil.copy(run_pt, ROOT / "ML_Models" / "Saved_Models" / f"{case}.pt")
+        return json.loads(run_json.read_text())
     import torch
     from torch import nn
     from sklearn.preprocessing import StandardScaler
@@ -142,7 +149,8 @@ if __name__ == "__main__":
                       key=lambda r: r["val"]["average"]["median err %"] + r["gate_region_val"]["average"]["median err %"])
         best = runs[0]
         src = OUT / "runs" / f"{case}__seed{best['seed']}.pt"
-        src.replace(ROOT / "ML_Models" / "Saved_Models" / f"{case}.pt")
+        dst = ROOT / "ML_Models" / "Saved_Models" / f"{case}.pt"
+        shutil.copy(src, dst)
         for r in runs[1:]:
             (OUT / "runs" / f"{case}__seed{r['seed']}.pt").unlink()
         print(f"{case}: seed {best['seed']} installed as ML_Models/Saved_Models/{case}.pt")

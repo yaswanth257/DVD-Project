@@ -24,8 +24,9 @@ variation with machine-learning transistor models instead of full SPICE simulati
 | A — model comparison + four final transistor models (MLP, Huber loss; all four also trained on gate-region rows) | done — [`ML_Models/README.md`](ML_Models/README.md) |
 | A — NMOS_OFF error analysis, structured (width / temperature) splits, Huber loss | done — [`Report/error_analysis_NMOS_OFF.md`](Report/error_analysis_NMOS_OFF.md), follow-up study in [`ML_Models/README.md`](ML_Models/README.md) |
 | A — Huber models, 4 seeds per case re-trained on the IIIT Turing cluster | done — [`ML_Models/Results/cluster_huber/`](ML_Models/Results/cluster_huber/) |
-| B — gate-level validation (INV, NAND2, NOR2, AND2, OR2; 18 cases × 200 corners) | done — median error 0.17 %, mean accuracy 99.77 % — [`Gate_Validation/README.md`](Gate_Validation/README.md) |
-| Example netlists (4 transistor, 5 gate) | done — [`Data_Generation/Netlists/`](Data_Generation/Netlists/), [`Gate_Validation/Netlists/`](Gate_Validation/Netlists/) |
+| B — gate-level validation (INV, NAND2, NOR2, AND2, OR2, 18 cases × 200 corners) | done — median error 0.18 %, mean accuracy 99.74 % — [`Gate_Validation/README.md`](Gate_Validation/README.md) |
+| C — circuit-level validation (3-bit Carry-Lookahead Adder, 128 combos × 200 corners) | done — median error 0.25 %, mean accuracy 99.68 % — [`Test_Circuit/README.md`](Test_Circuit/README.md) |
+| Example netlists (4 transistor, 5 gate, 1 circuit) | done — [`Data_Generation/Netlists/`](Data_Generation/Netlists/), [`Gate_Validation/Netlists/`](Gate_Validation/Netlists/), [`Test_Circuit/Netlists/`](Test_Circuit/Netlists/) |
 | Report | not started |
 
 ## Deliverables (assignment section 6)
@@ -33,13 +34,14 @@ variation with machine-learning transistor models instead of full SPICE simulati
 | # | Deliverable | Where | State |
 |---|---|---|---|
 | 1 | Four datasets, 10,000 rows, spec column order | `Data_Generation/Datasets/{NMOS,PMOS}_{ON,OFF}.csv` (training uses the 20,000-row `*_20k.csv`, whose first 10,000 rows are these files) | done |
-| 2 | Example netlists | `Data_Generation/Netlists/*.cir` (4 transistor cases), `Gate_Validation/Netlists/*.cir` (5 gates) | done |
+| 2 | Example netlists | `Data_Generation/Netlists/*.cir` (4 transistor cases), `Gate_Validation/Netlists/*.cir` (5 gates), `Test_Circuit/Netlists/CLA3.cir` (3-bit CLA test circuit) | done |
 | 3 | Data check: Kirchhoff check + 3 trend plots | `Data_Generation/Data_Check/` (`kirchhoff_check.csv`, `fig1`–`fig4`) | done |
 | 4 | Model comparison on the validation set (R², median, 95th) | `ML_Models/Results/validation_comparison_{NMOS,PMOS,HUBER}.csv` (random forest, XGBoost, polynomial ridge, MLP, MLP + Kirchhoff loss, MLP with Huber loss) and `validation_comparison_GATE_REGION.csv` (final models), table in `ML_Models/Results/model_evaluation.ipynb` | done |
 | 5 | Chosen models: test median / 95th, parity plots, model files | `ML_Models/Results/test_results.csv`, `ML_Models/Plots/parity_*.png`, `ML_Models/Saved_Models/*.pt` (the MLP with Huber loss, also trained on gate-region rows) | done |
 | 6 | Gate results table (18 cases: SPICE median, ML median, bias, median and 95th-percentile error) | `Gate_Validation/Results/gate_results_table_{total,vdd}.csv` | done |
 | 7 | Gate parity plot, log axes | `Gate_Validation/Plots/gate_parity_{total,vdd}.png` | done |
-| 9 | Code that regenerates everything, fixed seeds | [Reproducing Part A](#reproducing-part-a); Part B: `Gate_Validation/Scripts/01` – `06` | Parts A and B done |
+| 8 | Test circuit results table and parity plot | `Test_Circuit/Results/cla_results_table.csv`, `Test_Circuit/Plots/cla_parity.png` (3-bit Carry-Lookahead Adder, 128 inputs × 200 corners) | done |
+| 9 | Code that regenerates everything, fixed seeds | [Reproducing Part A](#reproducing-part-a), Part B: `Gate_Validation/Scripts/01` – `06`, Part C: `Test_Circuit/Scripts/07` – `10` | Parts A, B and C done |
 | 10 | Report | — | not started |
 
 ## Transistor-model results (test set, average over id, ig, is, ib)
@@ -66,11 +68,21 @@ seed ([`ML_Models/Results/cluster_huber/`](ML_Models/Results/cluster_huber/)); n
 
 | Leakage | Bias | Median error | 95th pct error | Mean accuracy |
 |---|---:|---:|---:|---:|
-| total (VDD source + inputs at logic 1) | −0.04 % | 0.17 % | 0.63 % | 99.77 % |
-| VDD source only | −0.03 % | 0.18 % | 0.85 % | 99.71 % |
+| total (VDD source + inputs at logic 1) | −0.07 % | 0.18 % | 0.75 % | 99.74 % |
+| VDD source only | −0.10 % | 0.22 % | 1.02 % | 99.66 % |
 
 Every gate / input case has a median error ≤ 0.35 % (total leakage). Per-case table, method and parity plots:
 [`Gate_Validation/README.md`](Gate_Validation/README.md).
+
+## Circuit-level results (Part C, 3-bit CLA, 128 inputs × 200 corners = 25,600 operating points)
+
+| Leakage | Bias | Median error | 95th pct error | Mean accuracy |
+|---|---:|---:|---:|---:|
+| total (VDD source + inputs at logic 1) | −0.23 % | 0.25 % | 0.80 % | 99.68 % |
+
+The 3-bit Carry-Lookahead Adder (33 gates: 6 AND2 + 24 NAND2 + 3 OR2) simulated across all 128 input combinations
+and 200 PVT corners achieves 99.68 % mean accuracy and 0.25 % median error. Details, table and parity plot:
+[`Test_Circuit/README.md`](Test_Circuit/README.md).
 
 ## Part A in brief
 
@@ -109,9 +121,16 @@ Every gate / input case has a median error ≤ 0.35 % (total leakage). Per-case 
   `predict_signed` gives the signed currents. The channel current of every ON transistor is solved from Kirchhoff's current law
   at the internal nodes (`gate_common.compose_currents`): it is fixed by the rest of the gate and cannot be resolved by a model
   from a |Vds| of 0.1 mV. Leakage = −Σ currents at the VDD (and logic-1 input) terminals.
-* **How the error came down:** first version (plain sum of the model currents) median 4.22 %, mean accuracy 94.6 %; with the
-  Kirchhoff composition 1.42 % / 97.7 %; with the ON models trained on gate-region rows 0.34 % / 99.5 %; with the OFF models trained on
-  gate-region rows too 0.17 % / 99.77 %.
+* **Accuracy:** median error 0.18 %, mean accuracy 99.74 % for total leakage across all 3,600 operating points.
+
+## Part C in brief
+
+* **Setup** (`Test_Circuit/`): 3-bit Carry-Lookahead Adder (CLA) adding A[2:0] and B[2:0] with Cin producing S[2:0] and Cout.
+  Composed of 33 gates (6 AND2, 24 NAND2, 3 OR2) using the sizing from Part B. All 128 primary input combinations simulated
+  across all 200 PVT corners (25,600 operating points).
+* **ML prediction:** each gate's input logic state is determined from the primary inputs by combinational logic evaluation.
+  Gate leakages are summed directly from Part B (`gate_ml_results.csv`), following the assignment assumption that gate inputs sit at rails.
+* **Accuracy:** median error 0.25 %, mean accuracy 99.68 % compared with full transistor-level SPICE simulations.
 
 ## Repository layout
 
@@ -137,6 +156,7 @@ ML_Models/
   Scripts/train_on_models_gate_region.py   training / installing the final models (ON and OFF, with gate-region rows)
   Results/gate_region/              training runs of the final models
 Gate_Validation/                    Part B: Scripts/01 – 06, Netlists/, Results/ (deliverable 6), Plots/ (deliverable 7)
+Test_Circuit/                       Part C: Scripts/07 – 10, Netlists/ (deliverable 2), Results/, Plots/ (deliverable 8)
 Report/                             report sections (error analysis of NMOS_OFF)
 ```
 
@@ -164,4 +184,7 @@ make sure `ngspice` is on the path.
 
 **Part B:** `python3 Gate_Validation/Scripts/01_generate_corners.py` … `06_diagnose_models_in_gates.py 12`, in order (details in
 [`Gate_Validation/README.md`](Gate_Validation/README.md)).
+
+**Part C:** `python3 Test_Circuit/Scripts/07_write_cla_netlist.py` … `10_analyze_cla.py`, in order (details in
+[`Test_Circuit/README.md`](Test_Circuit/README.md)).
 
