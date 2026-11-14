@@ -2,11 +2,12 @@
 
 The CLA adds two 3-bit numbers A[2:0] and B[2:0] with carry-in Cin and produces
 sum S[2:0] and carry-out Cout. It is built entirely from NAND2, AND2, and OR2 gates
-(gate sizing from gate_common.py). XOR is implemented with four NAND2 gates.
+(gate sizing from gate_common.py). XOR is implemented with four NAND2 gates; the carries
+c1, c2, cout are carry-lookahead (two-level AND-OR of the generate / propagate bits and cin).
 
 Circuit inputs: a0, a1, a2, b0, b1, b2, cin  (7 primary inputs, 128 combinations)
 Circuit outputs: s0, s1, s2, cout_net
-Total gates: 6 AND2 + 24 NAND2 + 3 OR2 = 33 gates
+Total gates: 12 AND2 + 24 NAND2 + 6 OR2 = 42 gates
 
 Run every script from the repository root, e.g.
     python3 Test_Circuit/Scripts/07_write_cla_netlist.py
@@ -33,7 +34,12 @@ INPUTS = ["a0", "a1", "a2", "b0", "b1", "b2", "cin"]   # 7 primary inputs
 
 # ===========================================================================
 # Gate instance list: (instance_name, gate_type, [in1, in2], output_net)
-# Gate types must match gate_common.GATES keys: NAND2, AND2, OR2
+# Gate types must match gate_common.GATES keys (the gates validated in Part B): NAND2, AND2, OR2
+# Carry-lookahead: every carry is computed directly from the generate / propagate bits and cin
+# (two-level AND-OR, built from 2-input gates), so no carry waits for the previous one:
+#   c1   = g0 + p0.cin
+#   c2   = g1 + p1.g0 + p1.p0.cin
+#   cout = g2 + p2.g1 + p2.p1.g0 + p2.p1.p0.cin
 # ===========================================================================
 GATES = [
     # Generate bits: G_i = A_i AND B_i
@@ -53,14 +59,25 @@ GATES = [
     ("xp2_n2",  "NAND2", ["a2", "n1p2"],     "n2p2"),
     ("xp2_n3",  "NAND2", ["b2", "n1p2"],     "n3p2"),
     ("xp2_n4",  "NAND2", ["n2p2", "n3p2"],   "p2"),
-    # Carry lookahead
-    ("and_pc0", "AND2",  ["p0", "cin"],      "pc0"),
-    ("or_c1",   "OR2",   ["g0", "pc0"],      "c1"),
-    ("and_pc1", "AND2",  ["p1", "c1"],       "pc1"),
-    ("or_c2",   "OR2",   ["g1", "pc1"],      "c2"),
-    ("and_pc2", "AND2",  ["p2", "c2"],       "pc2"),
-    ("or_cout", "OR2",   ["g2", "pc2"],      "cout_net"),
-    # Sum bits: S_i = P_i XOR C_i, implemented as 4-NAND2 XOR
+    # Lookahead carry c1 = g0 + p0.cin
+    ("and_c1a", "AND2",  ["p0", "cin"],      "c1a"),
+    ("or_c1",   "OR2",   ["g0", "c1a"],      "c1"),
+    # Lookahead carry c2 = g1 + p1.g0 + p1.p0.cin
+    ("and_c2a", "AND2",  ["p1", "g0"],       "c2a"),
+    ("and_p10", "AND2",  ["p1", "p0"],       "p10"),
+    ("and_c2b", "AND2",  ["p10", "cin"],     "c2b"),
+    ("or_c2a",  "OR2",   ["g1", "c2a"],      "c2o"),
+    ("or_c2",   "OR2",   ["c2o", "c2b"],     "c2"),
+    # Lookahead carry cout = g2 + p2.g1 + p2.p1.g0 + p2.p1.p0.cin
+    ("and_c3a", "AND2",  ["p2", "g1"],       "c3a"),
+    ("and_p21", "AND2",  ["p2", "p1"],       "p21"),
+    ("and_c3b", "AND2",  ["p21", "g0"],      "c3b"),
+    ("and_p210", "AND2", ["p21", "p0"],      "p210"),
+    ("and_c3c", "AND2",  ["p210", "cin"],    "c3c"),
+    ("or_c3a",  "OR2",   ["g2", "c3a"],      "c3o1"),
+    ("or_c3b",  "OR2",   ["c3b", "c3c"],     "c3o2"),
+    ("or_cout", "OR2",   ["c3o1", "c3o2"],   "cout_net"),
+    # Sum bits: S_i = P_i XOR C_i, implemented as 4-NAND2 XOR (c0 = cin)
     ("xs0_n1",  "NAND2", ["p0", "cin"],      "sn1_0"),
     ("xs0_n2",  "NAND2", ["p0", "sn1_0"],    "sn2_0"),
     ("xs0_n3",  "NAND2", ["cin", "sn1_0"],   "sn3_0"),
@@ -118,3 +135,16 @@ def combo_label(combo):
 
 def fmt(v):
     return f"{float(v):.16g}"
+
+
+def check_adder():
+    """Assert that the gate list adds: s2 s1 s0 and cout equal a + b + cin for all 128 input combinations."""
+    for combo in all_input_combos():
+        a0, a1, a2, b0, b1, b2, cin = combo
+        nets = evaluate_circuit(*combo)
+        total = (a0 + 2 * a1 + 4 * a2) + (b0 + 2 * b1 + 4 * b2) + cin
+        got = nets["s0"] + 2 * nets["s1"] + 4 * nets["s2"] + 8 * nets["cout_net"]
+        assert got == total, f"adder error for {combo_label(combo)}: {got} != {total}"
+
+
+check_adder()

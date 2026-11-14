@@ -16,7 +16,10 @@ from gate_common import GV, ML_CSV, SPICE_CSV, GATE_ORDER, case_list
 
 s = pd.read_csv(SPICE_CSV, dtype={"input": str})
 m = pd.read_csv(ML_CSV, dtype={"input": str})
-d = s.merge(m, on=["gate", "input", "corner", "vdd", "temp"])
+# join on the identifiers only (vdd / temp are floats; a last-digit difference must not drop rows)
+d = s.merge(m.drop(columns=["vdd", "temp"]), on=["gate", "input", "corner"])
+if len(d) != len(s):
+    raise RuntimeError(f"SPICE and ML results do not match: {len(d)} of {len(s)} operating points after the merge")
 d.to_csv(GV / "Results" / "gate_spice_vs_ml.csv", index=False)
 
 for kind in ("total", "vdd"):

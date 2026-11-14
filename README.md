@@ -11,6 +11,7 @@ variation with machine-learning transistor models instead of full SPICE simulati
 | Model file | `45nm_MGK.pm` (PTM 45 nm metal gate / high-k, BSIM4 level 54) |
 | Nominal VDD | 0.9 V (0.81 – 0.99 V in the samples) |
 | Channel length / widths | L = 45 nm, W = 45 – 360 nm (1 – 8 × Lmin) |
+| Test circuit | 3-bit carry-lookahead (CLA) adder |
 | Random seed | 12175305 (every script and notebook) |
 | Samples per transistor case | 20,000 (80 / 10 / 10 split → 16,000 / 2,000 / 2,000) |
 | Simulator | ngspice, batch mode, `.options gmin=1e-18 abstol=1e-18 reltol=1e-6 vntol=1e-9` |
@@ -51,13 +52,13 @@ all four models were also trained on 4,000 extra rows from the region where the 
 
 | Case | R² (log\|I\|) | Median error | 95th pct error | Mean error | Ampere-weighted error |
 |---|---|---|---|---|---|
-| NMOS_ON | 0.9997 | 0.15 % | 0.88 % | 0.63 % | 0.14 % |
-| NMOS_OFF | 0.9887 | 0.14 % | 1.30 % | 3.07 % ¹ | 0.29 % |
-| PMOS_ON | 0.9997 | 0.14 % | 0.79 % | 0.41 % | 0.13 % |
-| PMOS_OFF | 0.9959 | 0.14 % | 1.15 % | 1.13 % | 0.29 % |
+| NMOS_ON | 0.9997 | 0.15 % | 0.82 % | 0.55 % | 0.13 % |
+| NMOS_OFF | 0.9880 | 0.24 % | 1.94 % | 3.57 % ¹ | 0.48 % |
+| PMOS_ON | 0.9998 | 0.15 % | 0.83 % | 0.40 % | 0.14 % |
+| PMOS_OFF | 0.9955 | 0.14 % | 1.11 % | 1.30 % | 0.26 % |
 
-¹ Set by a handful of near-zero-crossing rows: one test row contributes 7.4 points of the `is` mean; without the 5 worst of
-2,000 rows the `id` / `is` means are 0.61 % / 0.51 %. The ampere-weighted error is Σ|I_pred − I_true| / Σ|I_true|.
+¹ Set by a handful of near-zero-crossing rows: one test row contributes 8.6 points of the `is` mean; without the 5 worst of
+2,000 rows the `id` / `is` means are 0.91 % / 0.77 %. The ampere-weighted error is Σ|I_pred − I_true| / Σ|I_true|.
 
 Details — the comparison of the model variants on the validation set, per-current results, why the Huber loss, why the
 gate-region rows and the error analysis — are in [`ML_Models/README.md`](ML_Models/README.md). The Huber models were also
@@ -71,17 +72,47 @@ seed ([`ML_Models/Results/cluster_huber/`](ML_Models/Results/cluster_huber/)); n
 | total (VDD source + inputs at logic 1) | −0.07 % | 0.18 % | 0.75 % | 99.74 % |
 | VDD source only | −0.10 % | 0.22 % | 1.02 % | 99.66 % |
 
-Every gate / input case has a median error ≤ 0.35 % (total leakage). Per-case table, method and parity plots:
+**Deliverable 6 — gate results table** (total leakage, 200 corners per case; error = ML / SPICE − 1, bias = median signed
+error; files `Gate_Validation/Results/gate_results_table_total.csv` and, for VDD-only leakage, `gate_results_table_vdd.csv`):
+
+| Gate | Input | SPICE median (A) | ML median (A) | Bias | Median error | 95th pct error | Mean accuracy |
+|---|---|---:|---:|---:|---:|---:|---:|
+| INV | 0 | 6.669e-08 | 6.660e-08 | +0.04 % | 0.20 % | 0.79 % | 99.72 % |
+| INV | 1 | 8.163e-08 | 8.145e-08 | −0.05 % | 0.16 % | 0.61 % | 99.79 % |
+| NAND2 | 00 | 9.277e-08 | 9.292e-08 | +0.01 % | 0.22 % | 0.70 % | 99.74 % |
+| NAND2 | 01 | 1.356e-07 | 1.354e-07 | −0.09 % | 0.17 % | 0.64 % | 99.77 % |
+| NAND2 | 10 | 7.543e-08 | 7.534e-08 | −0.04 % | 0.18 % | 0.64 % | 99.74 % |
+| NAND2 | 11 | 2.136e-07 | 2.134e-07 | −0.02 % | 0.15 % | 0.51 % | 99.80 % |
+| NOR2 | 00 | 2.100e-07 | 2.098e-07 | −0.16 % | 0.32 % | 0.99 % | 99.62 % |
+| NOR2 | 01 | 2.443e-07 | 2.437e-07 | −0.23 % | 0.26 % | 0.86 % | 99.66 % |
+| NOR2 | 10 | 1.141e-07 | 1.139e-07 | −0.05 % | 0.17 % | 0.88 % | 99.71 % |
+| NOR2 | 11 | 7.791e-08 | 7.833e-08 | +0.03 % | 0.22 % | 1.32 % | 99.63 % |
+| AND2 | 00 | 1.977e-07 | 1.983e-07 | −0.05 % | 0.14 % | 0.55 % | 99.81 % |
+| AND2 | 01 | 2.197e-07 | 2.197e-07 | −0.15 % | 0.20 % | 0.56 % | 99.77 % |
+| AND2 | 10 | 1.548e-07 | 1.548e-07 | −0.13 % | 0.18 % | 0.63 % | 99.77 % |
+| AND2 | 11 | 2.791e-07 | 2.782e-07 | −0.01 % | 0.12 % | 0.47 % | 99.83 % |
+| OR2 | 00 | 3.135e-07 | 3.120e-07 | −0.25 % | 0.28 % | 0.81 % | 99.67 % |
+| OR2 | 01 | 3.124e-07 | 3.117e-07 | −0.20 % | 0.22 % | 0.73 % | 99.72 % |
+| OR2 | 10 | 1.775e-07 | 1.775e-07 | −0.04 % | 0.14 % | 0.74 % | 99.79 % |
+| OR2 | 11 | 1.452e-07 | 1.456e-07 | +0.01 % | 0.14 % | 0.84 % | 99.77 % |
+| **all 18 cases** | | 1.552e-07 | 1.550e-07 | −0.07 % | 0.18 % | 0.75 % | 99.74 % |
+
+Every gate / input case has a median error between 0.12 % and 0.32 % (total leakage). Method, VDD-only table and parity plots:
 [`Gate_Validation/README.md`](Gate_Validation/README.md).
 
 ## Circuit-level results (Part C, 3-bit CLA, 128 inputs × 200 corners = 25,600 operating points)
 
-| Leakage | Bias | Median error | 95th pct error | Mean accuracy |
-|---|---:|---:|---:|---:|
-| total (VDD source + inputs at logic 1) | −0.23 % | 0.25 % | 0.80 % | 99.68 % |
+**Deliverable 8 — test-circuit results** (the same metrics as the gate results table; total leakage = VDD source + inputs at
+logic 1; file `Test_Circuit/Results/cla_results_table.csv`, which also has one row per input vector):
 
-The 3-bit Carry-Lookahead Adder (33 gates: 6 AND2 + 24 NAND2 + 3 OR2) simulated across all 128 input combinations
-and 200 PVT corners achieves 99.68 % mean accuracy and 0.25 % median error. Details, table and parity plot:
+| Circuit | SPICE median (A) | ML median (A) | Bias | Median error | 95th pct error | Mean accuracy |
+|---|---:|---:|---:|---:|---:|---:|
+| 3-bit CLA, all 128 input vectors × 200 corners | 7.564e-06 | 7.546e-06 | −0.23 % | 0.25 % | 0.79 % | 99.68 % |
+
+The 3-bit carry-lookahead adder (42 gates: 12 AND2 + 24 NAND2 + 6 OR2; every carry computed directly from the generate /
+propagate bits and Cin) reaches 99.68 % mean accuracy and 0.25 % median error over all 128 input vectors and 200 PVT corners.
+About half of that error is the composition assumption itself (summing the gates' *SPICE* leakages already gives 0.12 % median
+error, from gates loading each other) and half the ML models. Details, table and parity plot:
 [`Test_Circuit/README.md`](Test_Circuit/README.md).
 
 ## Part A in brief
@@ -102,10 +133,11 @@ and 200 PVT corners achieves 99.68 % mean accuracy and 0.25 % median error. Deta
   points of median error on the uniform test rows. A gate-level diagnostic then showed that the remaining error sat in the channel
   current of OFF transistors at |Vds| > 0.1 V: gates put them with drain and source at the rails (52 % at opposite rails), where
   the 20,000 uniform rows have about 8 rows within 2 % of VDD of that corner. 4,000 extra rows per OFF case from those cells halved
-  the gate-level error (median 0.34 % → 0.17 %) at a cost of 0.01 – 0.02 points of median and about 0.3 points of 95th percentile error on
-  the uniform test rows. Final test median 0.14 – 0.15 %, 95th percentile 0.79 – 1.30 %. These rows are not drawn from the section 4
+  the gate-level error (median 0.34 % → 0.18 %) at a cost of 0.02 – 0.11 points of median and 0.25 – 0.95 points of 95th percentile
+  error on the uniform test rows. Final test median 0.14 – 0.24 %, 95th percentile 0.82 – 1.94 %; one training seed per case
+  (12175305). These rows are not drawn from the section 4
   distribution and were chosen after looking at the gate-level results; the report should say so.
-* **NMOS_OFF mean error (3.07 %; 5.73 % before the gate-region rows).** It comes from a handful of samples where one terminal current nearly cancels (down to about
+* **NMOS_OFF mean error (3.57 %; 5.73 % before the gate-region rows).** It comes from a handful of samples where one terminal current nearly cancels (down to about
   1e-6 of the sample's largest current), so a tiny absolute error is a huge relative one; at the worst sample SPICE's own
   Kirchhoff residual is 2 % of that current. Seeds, larger networks and the loss do not remove it; details in
   [`Report/error_analysis_NMOS_OFF.md`](Report/error_analysis_NMOS_OFF.md).
@@ -125,12 +157,16 @@ and 200 PVT corners achieves 99.68 % mean accuracy and 0.25 % median error. Deta
 
 ## Part C in brief
 
-* **Setup** (`Test_Circuit/`): 3-bit Carry-Lookahead Adder (CLA) adding A[2:0] and B[2:0] with Cin producing S[2:0] and Cout.
-  Composed of 33 gates (6 AND2, 24 NAND2, 3 OR2) using the sizing from Part B. All 128 primary input combinations simulated
-  across all 200 PVT corners (25,600 operating points).
+* **Setup** (`Test_Circuit/`): 3-bit carry-lookahead adder (CLA) adding A[2:0] and B[2:0] with Cin, producing S[2:0] and Cout:
+  generate / propagate bits, lookahead carries `c1 = g0 + p0·cin`, `c2 = g1 + p1·g0 + p1·p0·cin`,
+  `cout = g2 + p2·g1 + p2·p1·g0 + p2·p1·p0·cin`, and sum XORs — 42 gates (12 AND2, 24 NAND2, 6 OR2) with the Part B sizing, only gate
+  types validated in Part B. All 128 input vectors at the same 200 PVT corners (25,600 operating points) in SPICE, as one full
+  transistor-level netlist.
 * **ML prediction:** each gate's input logic state is determined from the primary inputs by combinational logic evaluation.
-  Gate leakages are summed directly from Part B (`gate_ml_results.csv`), following the assignment assumption that gate inputs sit at rails.
-* **Accuracy:** median error 0.25 %, mean accuracy 99.68 % compared with full transistor-level SPICE simulations.
+  Gate leakages (*total* definition) are summed from the Part B gate models (`gate_ml_results.csv`), following the assignment
+  assumption that gate inputs sit at the rails and gates do not load each other.
+* **Accuracy:** median error 0.25 %, 95th percentile 0.79 %, mean accuracy 99.68 % against the full-circuit SPICE simulations;
+  slightly below the gate level (0.18 %), as the assignment expects.
 
 ## Repository layout
 

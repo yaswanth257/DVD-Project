@@ -91,9 +91,10 @@ there the ON models' gate and body currents were 2 – 7 % off, which set most o
 4,000 rows per ON case with VDD, temperature, W and the process parameters drawn as in section 4 and only vd / vs drawn
 differently: `vs` is near 0, near VDD or uniform (1/3 each; distance to the rail log-uniform in 0.1 µV – 0.45 V); `vd` is either
 on the diagonal (`vd = vs ± 10^U(−7, 0)` V) or drawn like `vs` (1/2 each). Same single-transistor netlist, own random draws
-(seeds 12175305 + 1000 / + 1002), no gate simulation result. One third of the rows have |Vds| < 1 mV. The training script applies
-the data-check rule (no zero current, Kirchhoff residual ≤ 1e-3 of the largest current); it keeps 3,915 NMOS_ON and 3,997 PMOS_ON
-rows — the others have all terminals within microvolts of each other, with currents at the solver's noise floor.
+(seed 12175305, a fresh generator per case), no gate simulation result. About one third of the rows have |Vds| < 1 mV. The
+training script applies the data-check rule (no zero current, Kirchhoff residual ≤ 1e-3 of the largest current); it keeps 3,911
+NMOS_ON and 3,996 PMOS_ON rows — the others have all terminals within microvolts of each other, with currents at the solver's
+noise floor.
 
 OFF cases. Once the ON models were fixed, the gate-level error that remained sat in the channel current of OFF transistors at
 |Vds| > 0.1 V (see `Gate_Validation/README.md`). Gates put OFF transistors at the corner of the (vd, vs) square: of the 8,400
@@ -102,8 +103,8 @@ rail and 29 % one at a rail and one at a series-stack node, while the 20,000 uni
 the opposite-rail corner. The OFF files add 4,000 rows per case, again with everything as in section 4 except vd / vs; for
 NMOS_OFF (PMOS_OFF mirrored, vd → VDD − vd, vs → VDD − vs): 45 % opposite rails (`vd = VDD − o`, `vs = o'`), 20 % same rail
 (`vs = o`, `vd = vs ± 10^U(−7, 0)` V), 20 % `vs = o` with `vd` uniform, 15 % `vd = VDD − o` with `vs` uniform; the distance `o`
-to a rail is log-uniform in 0.1 µV – 0.45 V. Own random draws (seeds 12175305 + 1001 / + 1003), no gate simulation result. All
-4,000 NMOS_OFF rows and 3,911 PMOS_OFF rows pass the data-check rule above. These rows are not drawn from the section 4
+to a rail is log-uniform in 0.1 µV – 0.45 V. Own random draws (seed 12175305, a fresh generator per case), no gate simulation
+result. All 4,000 NMOS_OFF rows and 3,915 PMOS_OFF rows pass the data-check rule above. These rows are not drawn from the section 4
 distribution and were chosen after looking at the gate-level evaluation; the report states this. The 10k and 20k datasets
 (deliverable 1) are unchanged.
 

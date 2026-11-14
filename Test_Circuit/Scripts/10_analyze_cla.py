@@ -22,8 +22,8 @@ from circuit_common import ML_CSV, PARITY_PNG, SPICE_CSV, TABLE_CSV
 
 
 def analyse():
-    spice = pd.read_csv(SPICE_CSV)
-    ml    = pd.read_csv(ML_CSV)
+    spice = pd.read_csv(SPICE_CSV, dtype={"input_combo": str})   # 7-bit labels such as "0000010" stay text
+    ml    = pd.read_csv(ML_CSV, dtype={"input_combo": str})
 
     merged = spice.merge(ml[["corner", "input_combo", "ml_leak_total"]],
                          on=["corner", "input_combo"], how="inner")

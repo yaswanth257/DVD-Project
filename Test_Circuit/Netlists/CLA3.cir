@@ -1,12 +1,12 @@
 * CLA3 3-bit Carry-Lookahead Adder transistor-level netlist
-* corner 0: VDD = 0.9476988382906772 V, T = -15.17203315358144 C
+* corner 0: VDD = 0.9476988382906772 V, T = -15.17203315358145 C
 * inputs a2 a1 a0 b2 b1 b0 cin = 0000000
 * gate sizing from gate_common: NAND2 Wn/Wp 180/180 nm, AND2 (NAND+INV), OR2 (NOR+INV)
-.include "C:\Users\SANGAMESHWAR\OneDrive - International Institute of Information Technology\Desktop\Acad\sem 5\DVD\PROJ\45nm_MGK.pm"
+.include "/home/kowshikh/Documents/Phasors/DVD-Project/45nm_MGK.pm"
 
 .options gmin=1e-18 abstol=1e-18 reltol=1e-6 vntol=1e-9
 
-.temp -15.17203315358144
+.temp -15.17203315358145
 
 Vdd vdd 0 DC 0.9476988382906772
 Va0 a0 0 DC 0
@@ -113,51 +113,123 @@ Mxp2_n4_mp2 p2 n3p2 vdd vdd pmos W=1.8e-07 L=4.5e-08
 Mxp2_n4_mn1 p2 n2p2 xp2_n4_x 0 nmos W=1.8e-07 L=4.5e-08
 Mxp2_n4_mn2 xp2_n4_x n3p2 0 0 nmos W=1.8e-07 L=4.5e-08
 
-* and_pc0: AND2(p0, cin) -> pc0
-Mand_pc0_mp1 and_pc0_n p0 vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc0_mp2 and_pc0_n cin vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc0_mn1 and_pc0_n p0 and_pc0_x 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc0_mn2 and_pc0_x cin 0 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc0_mp3 pc0 and_pc0_n vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc0_mn3 pc0 and_pc0_n 0 0 nmos W=9e-08 L=4.5e-08
+* and_c1a: AND2(p0, cin) -> c1a
+Mand_c1a_mp1 and_c1a_n p0 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c1a_mp2 and_c1a_n cin vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c1a_mn1 and_c1a_n p0 and_c1a_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c1a_mn2 and_c1a_x cin 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c1a_mp3 c1a and_c1a_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c1a_mn3 c1a and_c1a_n 0 0 nmos W=9e-08 L=4.5e-08
 
-* or_c1: OR2(g0, pc0) -> c1
+* or_c1: OR2(g0, c1a) -> c1
 Mor_c1_mp1 or_c1_y g0 vdd vdd pmos W=3.6e-07 L=4.5e-08
-Mor_c1_mp2 or_c1_n pc0 or_c1_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c1_mp2 or_c1_n c1a or_c1_y vdd pmos W=3.6e-07 L=4.5e-08
 Mor_c1_mn1 or_c1_n g0 0 0 nmos W=9e-08 L=4.5e-08
-Mor_c1_mn2 or_c1_n pc0 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c1_mn2 or_c1_n c1a 0 0 nmos W=9e-08 L=4.5e-08
 Mor_c1_mp3 c1 or_c1_n vdd vdd pmos W=1.8e-07 L=4.5e-08
 Mor_c1_mn3 c1 or_c1_n 0 0 nmos W=9e-08 L=4.5e-08
 
-* and_pc1: AND2(p1, c1) -> pc1
-Mand_pc1_mp1 and_pc1_n p1 vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc1_mp2 and_pc1_n c1 vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc1_mn1 and_pc1_n p1 and_pc1_x 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc1_mn2 and_pc1_x c1 0 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc1_mp3 pc1 and_pc1_n vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc1_mn3 pc1 and_pc1_n 0 0 nmos W=9e-08 L=4.5e-08
+* and_c2a: AND2(p1, g0) -> c2a
+Mand_c2a_mp1 and_c2a_n p1 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2a_mp2 and_c2a_n g0 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2a_mn1 and_c2a_n p1 and_c2a_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c2a_mn2 and_c2a_x g0 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c2a_mp3 c2a and_c2a_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2a_mn3 c2a and_c2a_n 0 0 nmos W=9e-08 L=4.5e-08
 
-* or_c2: OR2(g1, pc1) -> c2
-Mor_c2_mp1 or_c2_y g1 vdd vdd pmos W=3.6e-07 L=4.5e-08
-Mor_c2_mp2 or_c2_n pc1 or_c2_y vdd pmos W=3.6e-07 L=4.5e-08
-Mor_c2_mn1 or_c2_n g1 0 0 nmos W=9e-08 L=4.5e-08
-Mor_c2_mn2 or_c2_n pc1 0 0 nmos W=9e-08 L=4.5e-08
+* and_p10: AND2(p1, p0) -> p10
+Mand_p10_mp1 and_p10_n p1 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p10_mp2 and_p10_n p0 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p10_mn1 and_p10_n p1 and_p10_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p10_mn2 and_p10_x p0 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p10_mp3 p10 and_p10_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p10_mn3 p10 and_p10_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* and_c2b: AND2(p10, cin) -> c2b
+Mand_c2b_mp1 and_c2b_n p10 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2b_mp2 and_c2b_n cin vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2b_mn1 and_c2b_n p10 and_c2b_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c2b_mn2 and_c2b_x cin 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c2b_mp3 c2b and_c2b_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c2b_mn3 c2b and_c2b_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* or_c2a: OR2(g1, c2a) -> c2o
+Mor_c2a_mp1 or_c2a_y g1 vdd vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c2a_mp2 or_c2a_n c2a or_c2a_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c2a_mn1 or_c2a_n g1 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c2a_mn2 or_c2a_n c2a 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c2a_mp3 c2o or_c2a_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mor_c2a_mn3 c2o or_c2a_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* or_c2: OR2(c2o, c2b) -> c2
+Mor_c2_mp1 or_c2_y c2o vdd vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c2_mp2 or_c2_n c2b or_c2_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c2_mn1 or_c2_n c2o 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c2_mn2 or_c2_n c2b 0 0 nmos W=9e-08 L=4.5e-08
 Mor_c2_mp3 c2 or_c2_n vdd vdd pmos W=1.8e-07 L=4.5e-08
 Mor_c2_mn3 c2 or_c2_n 0 0 nmos W=9e-08 L=4.5e-08
 
-* and_pc2: AND2(p2, c2) -> pc2
-Mand_pc2_mp1 and_pc2_n p2 vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc2_mp2 and_pc2_n c2 vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc2_mn1 and_pc2_n p2 and_pc2_x 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc2_mn2 and_pc2_x c2 0 0 nmos W=1.8e-07 L=4.5e-08
-Mand_pc2_mp3 pc2 and_pc2_n vdd vdd pmos W=1.8e-07 L=4.5e-08
-Mand_pc2_mn3 pc2 and_pc2_n 0 0 nmos W=9e-08 L=4.5e-08
+* and_c3a: AND2(p2, g1) -> c3a
+Mand_c3a_mp1 and_c3a_n p2 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3a_mp2 and_c3a_n g1 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3a_mn1 and_c3a_n p2 and_c3a_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3a_mn2 and_c3a_x g1 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3a_mp3 c3a and_c3a_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3a_mn3 c3a and_c3a_n 0 0 nmos W=9e-08 L=4.5e-08
 
-* or_cout: OR2(g2, pc2) -> cout_net
-Mor_cout_mp1 or_cout_y g2 vdd vdd pmos W=3.6e-07 L=4.5e-08
-Mor_cout_mp2 or_cout_n pc2 or_cout_y vdd pmos W=3.6e-07 L=4.5e-08
-Mor_cout_mn1 or_cout_n g2 0 0 nmos W=9e-08 L=4.5e-08
-Mor_cout_mn2 or_cout_n pc2 0 0 nmos W=9e-08 L=4.5e-08
+* and_p21: AND2(p2, p1) -> p21
+Mand_p21_mp1 and_p21_n p2 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p21_mp2 and_p21_n p1 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p21_mn1 and_p21_n p2 and_p21_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p21_mn2 and_p21_x p1 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p21_mp3 p21 and_p21_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p21_mn3 p21 and_p21_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* and_c3b: AND2(p21, g0) -> c3b
+Mand_c3b_mp1 and_c3b_n p21 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3b_mp2 and_c3b_n g0 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3b_mn1 and_c3b_n p21 and_c3b_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3b_mn2 and_c3b_x g0 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3b_mp3 c3b and_c3b_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3b_mn3 c3b and_c3b_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* and_p210: AND2(p21, p0) -> p210
+Mand_p210_mp1 and_p210_n p21 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p210_mp2 and_p210_n p0 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p210_mn1 and_p210_n p21 and_p210_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p210_mn2 and_p210_x p0 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_p210_mp3 p210 and_p210_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_p210_mn3 p210 and_p210_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* and_c3c: AND2(p210, cin) -> c3c
+Mand_c3c_mp1 and_c3c_n p210 vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3c_mp2 and_c3c_n cin vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3c_mn1 and_c3c_n p210 and_c3c_x 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3c_mn2 and_c3c_x cin 0 0 nmos W=1.8e-07 L=4.5e-08
+Mand_c3c_mp3 c3c and_c3c_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mand_c3c_mn3 c3c and_c3c_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* or_c3a: OR2(g2, c3a) -> c3o1
+Mor_c3a_mp1 or_c3a_y g2 vdd vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c3a_mp2 or_c3a_n c3a or_c3a_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c3a_mn1 or_c3a_n g2 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c3a_mn2 or_c3a_n c3a 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c3a_mp3 c3o1 or_c3a_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mor_c3a_mn3 c3o1 or_c3a_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* or_c3b: OR2(c3b, c3c) -> c3o2
+Mor_c3b_mp1 or_c3b_y c3b vdd vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c3b_mp2 or_c3b_n c3c or_c3b_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_c3b_mn1 or_c3b_n c3b 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c3b_mn2 or_c3b_n c3c 0 0 nmos W=9e-08 L=4.5e-08
+Mor_c3b_mp3 c3o2 or_c3b_n vdd vdd pmos W=1.8e-07 L=4.5e-08
+Mor_c3b_mn3 c3o2 or_c3b_n 0 0 nmos W=9e-08 L=4.5e-08
+
+* or_cout: OR2(c3o1, c3o2) -> cout_net
+Mor_cout_mp1 or_cout_y c3o1 vdd vdd pmos W=3.6e-07 L=4.5e-08
+Mor_cout_mp2 or_cout_n c3o2 or_cout_y vdd pmos W=3.6e-07 L=4.5e-08
+Mor_cout_mn1 or_cout_n c3o1 0 0 nmos W=9e-08 L=4.5e-08
+Mor_cout_mn2 or_cout_n c3o2 0 0 nmos W=9e-08 L=4.5e-08
 Mor_cout_mp3 cout_net or_cout_n vdd vdd pmos W=1.8e-07 L=4.5e-08
 Mor_cout_mn3 cout_net or_cout_n 0 0 nmos W=9e-08 L=4.5e-08
 
@@ -239,12 +311,12 @@ set numdgt=15
 altermod nmos vth0 = 0.3516567680650164
 altermod nmos toxe = 9.348294576189222e-10
 altermod nmos ndep = 6.771478713660292e+18
-altermod nmos u0 = 0.0277616711781986
+altermod nmos u0 = 0.02776167117819865
 altermod nmos xj = 1.425192901868327e-08
-altermod pmos vth0 = -0.2347711950807913
+altermod pmos vth0 = -0.2347711950807914
 altermod pmos toxe = 9.909264394203287e-10
 altermod pmos ndep = 2.69912950261189e+18
-altermod pmos u0 = 0.0040609470050882
+altermod pmos u0 = 0.00406094700508827
 altermod pmos xj = 1.358003403004789e-08
 
 op

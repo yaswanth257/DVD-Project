@@ -16,8 +16,10 @@ that pass the data-check rule (no zero current, Kirchhoff residual <= 1e-3 of th
 validation rows + 10 % of the gate-region rows; the 2,000 test rows and the last 10 % of the gate-region rows are only evaluated.
 In gate-region rows with |vd - vs| < 10 mV, id and is are left out of the loss: there the channel current is g x Vds at a tiny Vds,
 which the gate composition takes from Kirchhoff's law instead (Gate_Validation/Scripts/gate_common.compose_currents).
-Two training seeds per case; the one with the lower sum of the validation median errors (validation rows + gate-region
-validation rows) is installed as Saved_Models/<case>.pt. Writes Results/gate_region/runs/<case>__seed<s>.json and
+One training seed per case (SEEDS, the project seed 12175305); with more than one seed, the run with the lower sum of the
+validation median errors (validation rows + gate-region validation rows) would be installed. The run is installed as
+Saved_Models/<case>.pt; a run whose JSON and weights already exist in Results/gate_region/runs/ is reused instead of retrained.
+Writes Results/gate_region/runs/<case>__seed<s>.json and
 Results/validation_comparison_GATE_REGION.csv (rows of the cases trained now replace the old rows; the others stay).
 """
 import argparse

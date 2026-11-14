@@ -27,17 +27,10 @@ from gate_common import combo_label as gate_combo_label
 
 if __name__ == "__main__":
     # Load Part B gate ML results
-    gml = pd.read_csv(GATE_ML_CSV)
+    gml = pd.read_csv(GATE_ML_CSV, dtype={"input": str})          # keep labels such as "01" as text
 
-    # Build a fast lookup: (gate_type, input_label_str, corner) -> ml_leak_total
-    # The gate_ml_results.csv stores the input label as an integer-like string without
-    # a leading zero for 2-input gates (e.g. "01" is stored as "1", "10" as "10").
-    # We normalise by converting to int then back so both sides match.
-    gml["input_key"] = gml["input"].astype(str)
-    lookup = {}
-    for row in gml.itertuples(index=False):
-        key = (row.gate, row.input_key, int(row.corner))
-        lookup[key] = row.ml_leak_total
+    # Fast lookup: (gate_type, input label, corner) -> ml_leak_total
+    lookup = {(row.gate, row.input, int(row.corner)): row.ml_leak_total for row in gml.itertuples(index=False)}
 
     combos = all_input_combos()
     corners_df = gml[["corner", "vdd", "temp"]].drop_duplicates().sort_values("corner")
@@ -53,8 +46,7 @@ if __name__ == "__main__":
             for (inst, gate_type, in_nets, out_net) in GATES:
                 # Determine the logic bits at this gate's inputs
                 in_bits = tuple(nets[n] for n in in_nets)
-                # Format as a label matching gate_ml_results (strip leading zeros as int)
-                gate_input_label = str(int("".join(str(b) for b in in_bits)))
+                gate_input_label = gate_combo_label(in_bits)          # e.g. (0, 1) -> "01", as in gate_ml_results
                 key = (gate_type, gate_input_label, corner_id)
                 if key not in lookup:
                     raise KeyError(f"No entry in gate_ml_results for {key}")

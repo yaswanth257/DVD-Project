@@ -9,35 +9,35 @@ Model file `45nm_MGK.pm`, nominal VDD 0.9 V, seed `12175305`, 20,000 samples per
 
 | Case | Final model | R² (log\|I\|) | Median error | 95th pct error | Mean error |
 |---|---|---|---|---|---|
-| NMOS_ON | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9997 | **0.15 %** | **0.88 %** | 0.63 % |
-| NMOS_OFF | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9887 | **0.14 %** | **1.30 %** | 3.07 % ¹ |
-| PMOS_ON | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9997 | **0.14 %** | **0.79 %** | 0.41 % |
-| PMOS_OFF | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9959 | **0.14 %** | **1.15 %** | 1.13 % |
+| NMOS_ON | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9997 | **0.15 %** | **0.82 %** | 0.55 % |
+| NMOS_OFF | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9880 | **0.24 %** | **1.94 %** | 3.57 % ¹ |
+| PMOS_ON | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9998 | **0.15 %** | **0.83 %** | 0.40 % |
+| PMOS_OFF | MLP 128-64-32-16, Huber loss, + gate-region rows | 0.9955 | **0.14 %** | **1.11 %** | 1.30 % |
 
 Error = |I_pred / I_SPICE − 1| × 100 for each sample and current (current magnitudes). The test set was used only once, in
 [`Results/model_evaluation.ipynb`](Results/model_evaluation.ipynb), after all choices were made on the validation set.
 
-* **Typical accuracy is the same for NMOS and PMOS:** median ≤ 0.15 % and 95th percentile ≤ 1.0 % in all four cases.
+* **Typical accuracy is similar for NMOS and PMOS:** median 0.14 – 0.24 % and 95th percentile 0.82 – 1.94 % in all four cases.
 * ¹ **The NMOS_OFF mean is dominated by a few rows** (see [below](#why-the-nmos_off-mean-error-is-high-while-its-median-is-not)):
-  the 5 worst of 2,000 test rows account for 82 % of the mean error of `id` and 94 % of that of `is`; without them the mean
-  errors are 0.61 % (`id`) and 0.51 % (`is`). The mean is therefore not a reliable measure of NMOS_OFF accuracy.
+  the 5 worst of 2,000 test rows account for 76 % of the mean error of `id` and 92 % of that of `is`; without them the mean
+  errors are 0.91 % (`id`) and 0.77 % (`is`). The mean is therefore not a reliable measure of NMOS_OFF accuracy.
 * **How the final model was found:** the training notebooks compared five model types with the MSE loss (the MLP won by
   about 10× in median error); a follow-up study then trained the same MLP with a Huber loss, which is better on the
   validation median and 95th percentile in every case. All four models were finally re-trained with 4,000 extra rows from the
   region where the transistor operates inside gates, where Part B showed their errors ([Final models](#final-models)): the ON
   models first, the OFF models after the gate-level diagnostic showed that the remaining error sat in the OFF channel currents.
-* Transistor-level accuracy here; gate level (Part B): median 0.17 %, mean accuracy 99.77 %, see
+* Transistor-level accuracy here; gate level (Part B): median 0.18 %, mean accuracy 99.74 %, see
   [`../Gate_Validation/README.md`](../Gate_Validation/README.md).
 
 Per current, test set (median / 95th percentile / mean error in %):
 
 | Current | NMOS_ON | NMOS_OFF | PMOS_ON | PMOS_OFF |
 |---|---|---|---|---|
-| `id` | 0.15 / 0.76 / 0.72 | 0.18 / 1.73 / 3.49 | 0.13 / 0.72 / 0.76 | 0.19 / 1.51 / 2.90 |
-| `ig` | 0.13 / 1.21 / 0.34 | 0.13 / 0.90 / 0.33 | 0.14 / 1.00 / 0.28 | 0.12 / 1.09 / 0.39 |
-| `is` | 0.15 / 0.77 / 1.22 | 0.18 / 1.52 / 8.00 | 0.13 / 0.69 / 0.33 | 0.17 / 1.33 / 0.80 |
-| `ib` | 0.16 / 0.79 / 0.24 | 0.06 / 1.04 / 0.46 | 0.17 / 0.75 / 0.26 | 0.08 / 0.70 / 0.45 |
-| average | 0.15 / 0.88 / 0.63 | 0.14 / 1.30 / 3.07 | 0.14 / 0.79 / 0.41 | 0.14 / 1.15 / 1.13 |
+| `id` | 0.14 / 0.74 / 0.74 | 0.30 / 2.71 / 3.81 | 0.14 / 0.78 / 0.74 | 0.17 / 1.48 / 3.48 |
+| `ig` | 0.14 / 1.11 / 0.40 | 0.25 / 1.53 / 0.54 | 0.13 / 0.98 / 0.27 | 0.13 / 0.78 / 0.31 |
+| `is` | 0.14 / 0.71 / 0.82 | 0.33 / 2.23 / 9.46 | 0.14 / 0.74 / 0.30 | 0.18 / 1.42 / 0.91 |
+| `ib` | 0.16 / 0.72 / 0.24 | 0.07 / 1.29 / 0.48 | 0.18 / 0.82 / 0.28 | 0.08 / 0.75 / 0.52 |
+| average | 0.15 / 0.82 / 0.55 | 0.24 / 1.94 / 3.57 | 0.15 / 0.83 / 0.40 | 0.14 / 1.11 / 1.30 |
 
 Full table: [`Results/test_results.csv`](Results/test_results.csv). Predicted-vs-SPICE plots (test set, log axes):
 [NMOS_ON](Plots/parity_NMOS_ON.png), [NMOS_OFF](Plots/parity_NMOS_OFF.png), [PMOS_ON](Plots/parity_PMOS_ON.png),
@@ -54,7 +54,7 @@ Full table: [`Results/test_results.csv`](Results/test_results.csv). Predicted-vs
 | Split | random 80 / 10 / 10 → 16,000 train / 2,000 validation / 2,000 test, `train_test_split(random_state=12175305)`; one split of the row indices shared by all models of a case |
 | Inputs | 10 raw (`vdd, temp, w, vd, vs, vth0, toxe, ndep, u0, xj`) + 15 physics features = 25. `vg` and `vb` are constant or equal to `vdd`, so they are not features |
 | Physics features | terminal differences (`vgs, vgd, vds, vbs, vbd`); effective source (for NMOS the lower of `vd` / `vs`): `vgs_eff, vbs_eff, vds_abs`; sub-threshold terms `overdrive_vt = (vgs_eff − \|vth0\|)/Vt`, `log(1 − exp(−\|vds\|/Vt))`, `1/T`, `log w`; gate-tunnelling terms `1/toxe, vgs/toxe, vgd/toxe` |
-| Targets | `log10 \|I\|` of `id, ig, is, ib` (each current spans 3 – 10 decades). The sign is not learned; `LeakageModel.predict_signed` adds it with a rule (see [Current signs](#current-signs-predict_signed-for-parts-b-and-c)) |
+| Targets | `log10 \|I\|` of `id, ig, is, ib` (each current spans 3 – 10 decades). The sign is not learned; `LeakageModel.predict_signed` adds it with a rule (see [Current signs](#current-signs-predict_signed-for-part-b)) |
 | Scaling | `StandardScaler` fitted on the training rows only (inputs; targets too for the MLP) |
 | Selection | per case, the model with the lowest **validation median and 95th-percentile error** (average over the four currents). The training notebooks first chose by the validation mean; that mean is decided by a few near-cancelled rows, so it is reported but not used for the final choice |
 | Test | the final model is evaluated once, on the test rows |
@@ -112,10 +112,10 @@ The Kirchhoff term works as intended — the predictions obey `id + ig + is + ib
 
 | File | Model | Parameters | Training seed | Validation median / 95th / mean | Test median / 95th / mean |
 |---|---|---|---|---|---|
-| `Saved_Models/NMOS_ON.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175306 | 0.15 / 0.89 / 0.51 % | 0.15 / 0.88 / 0.63 % |
-| `Saved_Models/NMOS_OFF.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175305 | 0.13 / 1.18 / 6.14 % | 0.14 / 1.30 / 3.07 % |
-| `Saved_Models/PMOS_ON.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175306 | 0.14 / 0.86 / 0.29 % | 0.14 / 0.79 / 0.41 % |
-| `Saved_Models/PMOS_OFF.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175306 | 0.14 / 1.09 / 0.98 % | 0.14 / 1.15 / 1.13 % |
+| `Saved_Models/NMOS_ON.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175305 | 0.15 / 0.84 / 0.51 % | 0.15 / 0.82 / 0.55 % |
+| `Saved_Models/NMOS_OFF.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175305 | 0.23 / 1.88 / 4.13 % | 0.24 / 1.94 / 3.57 % |
+| `Saved_Models/PMOS_ON.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175305 | 0.15 / 0.84 / 0.31 % | 0.15 / 0.83 / 0.40 % |
+| `Saved_Models/PMOS_OFF.pt` | MLP 128-64-32-16, Huber loss β = 0.002, + gate-region rows | 14,260 | 12175305 | 0.15 / 1.19 / 1.02 % | 0.14 / 1.11 / 1.30 % |
 
 Validation and test on the 2,000 + 2,000 uniformly sampled rows of the 80 / 10 / 10 split (seed 12175305, the same for every
 model). All four were trained for 3,000 epochs. Each file is self-contained: weights, hidden layers, feature list, both scalers,
@@ -133,41 +133,43 @@ pick to `Saved_Models/notebook_mse/` (ignored by git) and does not touch the fin
 of 20 µV – 1 mV. Uniform sampling of vd / vs puts 0.2 % of the rows there, and Part B found that the ON models' gate and body
 currents (`ig`, `ib`) — the currents its Kirchhoff composition takes from the model — were 2 – 7 % off inside gates and set most of
 the gate-level error. `Data_Generation/Scripts/generate_gate_region_data.py` adds 4,000 single-transistor rows per ON case in that
-region (own random draws, no gate result). On the gate-region validation rows (`Results/gate_region/runs/`) the new ON models cut the
-tail of `ig` / `ib` from a 95th percentile of 1,400 – 1,700 % / 29 – 98 % (Huber models) to 31 – 32 % / 2.0 – 2.9 % (the remaining
-large `ig` errors are rows where the gate current itself is tiny), with medians 0.28 – 0.30 % instead of 0.37 – 0.52 %. On the uniformly
-sampled rows they cost about 0.05 points of median error (0.10 → 0.15 % NMOS_ON, 0.09 → 0.14 % PMOS_ON; 95th percentile 0.62 → 0.88 % and
-0.60 → 0.79 %). At gate level the median error falls from 1.42 % to 0.34 % and the mean accuracy rises from 97.7 % to 99.5 %
-([Part B](../Gate_Validation/README.md)). A wider network (256-128-64-32) was also tried; its validation score was within the
-seed-to-seed spread, so the 128-64-32-16 network was kept.
+region (own random draws, no gate result). On the gate-region validation rows the final ON models cut the tail of `ig` / `ib`
+from a 95th percentile of 630 – 2,700 % / 25 – 92 % (Huber models without these rows) to 15 – 34 % / 1.7 – 2.5 % (the remaining large
+`ig` errors are rows where the gate current itself is tiny), with medians 0.27 – 0.37 % instead of 0.41 – 0.60 %. In gate-region rows
+with |Vds| < 10 mV their `id` / `is` are left out of the loss: the gate composition takes that channel current from Kirchhoff's law.
 
 **Why the OFF models learn from gate-region rows too.** With the ON models fixed, a diagnostic on 12 corners of the gate runs (every
 transistor re-simulated alone at the voltages it sees in the gate; [`Gate_Validation/README.md`](../Gate_Validation/README.md))
 swapped each group of model currents for the true ones and recomposed the gate leakage: the channel currents (`id`, `is`) of the OFF
-transistors at |Vds| > 0.1 V carried most of the remaining error (median 0.41 % → 0.12 % when they were exact), while OFF
-transistors at small |Vds| (0.41 % → 0.38 %) and the `ig` / `ib` of OFF transistors (0.39 %) did not matter. Gates place their OFF
-transistors at the corner of the (vd, vs) square: of the 8,400 OFF-transistor instances in the 18 gate cases × 200 corners 52 % have
-drain and source at opposite rails (|Vds| = VDD), 19 % both at the same rail and 29 % one at a rail and one at a series-stack
-node, while the 20,000 uniform rows have about 8 rows within 2 % of VDD of the opposite-rail corner. 4,000 single-transistor rows per
-OFF case from those cells (45 / 20 / 20 / 15 % opposite rails / same rail / source at a rail / drain at a rail; drawn for NMOS_OFF and
-mirrored for PMOS_OFF; own random draws, no gate result; `generate_gate_region_data.py --cases OFF`) were added with the same
-recipe as for the ON models. On 800 / 783 held-out gate-region rows (validation + test part of the 4,000, same filter and loss mask) the
-old and new OFF models compare as follows (`id` / `is` median and 95th percentile of the error in %, rows with |vd − vs| ≥ 10 mV):
+transistors at |Vds| > 0.1 V carried most of the remaining error. Gates place their OFF transistors at the corners of the (vd, vs)
+square: of the 8,400 OFF-transistor instances in the 18 gate cases × 200 corners, 52 % have drain and source at opposite rails
+(|Vds| = VDD), 19 % both at the same rail and 29 % one at a rail and one at a series-stack node, while the 20,000 uniform rows have
+about 8 rows within 2 % of VDD of the opposite-rail corner. 4,000 single-transistor rows per OFF case from those cells (45 / 20 / 20 /
+15 % opposite rails / same rail / source at a rail / drain at a rail; drawn for NMOS_OFF and mirrored for PMOS_OFF; own random draws,
+no gate result; `generate_gate_region_data.py --cases OFF`) were added with the same recipe. On the held-out gate-region rows
+(validation + test part, |vd − vs| ≥ 10 mV) the `id` / `is` errors (median / 95th percentile, %) compare as follows:
 
-| | `id` old → new | `is` old → new |
+| | `id` Huber model → final | `is` Huber model → final |
 |---|---|---|
-| NMOS_OFF | 0.43 / 3.81 → 0.20 / 1.01 | 0.61 / 4.28 → 0.23 / 1.19 |
-| PMOS_OFF | 0.37 / 2.27 → 0.20 / 1.03 | 0.53 / 2.71 → 0.23 / 1.45 |
+| NMOS_OFF | 0.45 / 3.0 → 0.31 / 1.4 | 0.57 / 4.0 → 0.41 / 2.2 |
+| PMOS_OFF | 0.37 / 2.1 → 0.20 / 1.0 | 0.46 / 2.5 → 0.26 / 1.6 |
 
-On the uniformly sampled test rows the new OFF models are slightly worse: median 0.13 → 0.14 % (NMOS_OFF) and 0.12 → 0.14 % (PMOS_OFF),
-95th percentile 0.99 → 1.30 % and 0.86 → 1.15 %. The NMOS_OFF test mean falls from 5.73 % to 3.07 % and the PMOS_OFF mean rises from
-0.85 % to 1.13 %; both are set by 1 – 5 near-cancelled rows (below), whose position relative to the zero crossing changes with every
-retraining, so neither number says much about typical accuracy. At gate level the median error falls from 0.34 % to 0.17 %, the 95th
-percentile from 1.64 % to 0.63 % and the mean accuracy rises from 99.47 % to 99.77 %. Of the two trained seeds per case the one with the
-lower sum of the validation and gate-region validation medians is kept (NMOS_OFF 12175305, PMOS_OFF 12175306); the other seed of
-each case was within 0.08 points of median error on the uniform rows (NMOS_OFF test median 0.14 / 0.21 %, PMOS_OFF 0.14 / 0.20 %).
-The OFF extra rows were not part of the first version of Part B or of the 4-seed cluster check below; the Huber models of the
-follow-up study (without gate-region rows) are the ones in `Results/huber_test_results.csv`, `Results/offstudy/final/` and the cluster runs.
+**What the gate-region rows cost and bring.** On the uniformly sampled test rows the final models are somewhat less precise than the
+Huber models without these rows (median / 95th percentile, %):
+
+| | NMOS_ON | NMOS_OFF | PMOS_ON | PMOS_OFF |
+|---|---|---|---|---|
+| Huber model (stage 13) | 0.10 / 0.62 | 0.13 / 0.99 | 0.09 / 0.60 | 0.12 / 0.86 |
+| final (+ gate-region rows) | 0.15 / 0.82 | 0.24 / 1.94 | 0.15 / 0.83 | 0.14 / 1.11 |
+
+The NMOS_OFF test mean falls from 5.73 % to 3.57 %, the PMOS_OFF mean rises from 0.85 % to 1.30 %; both are set by 1 – 5 near-cancelled
+rows (next section) and change with every retraining. At gate level (Part B, total leakage, 3,600 points) the median error falls
+from 1.42 % (Huber models with the Kirchhoff composition) to 0.34 % with the ON rows and 0.18 % with the ON and OFF rows (95th
+percentile 7.29 → 1.64 → 0.75 %, mean accuracy 97.71 → 99.47 → 99.74 %). The gate-level gain is the purpose of the final models, so
+the small loss on uniformly drawn single transistors was accepted. Each case is trained with one seed, the project seed 12175305;
+the training runs are in `Results/gate_region/runs/`. A wider network (256-128-64-32) was tried for the ON models; its validation
+score was within the seed-to-seed spread, so the 128-64-32-16 network was kept. The Huber models of the follow-up study (without
+gate-region rows) are the ones in `Results/huber_test_results.csv`, `Results/offstudy/final/` and the cluster runs below.
 
 ## Why the NMOS_OFF mean error is high while its median is not
 
@@ -177,25 +179,25 @@ space. Near a crossing |I| becomes tiny and `log10 |I|` dives; the smooth MLP (t
 dip that deep, and the percentage error of such a row is huge. [`Results/model_evaluation.ipynb`](Results/model_evaluation.ipynb)
 (section 5, table [`Results/error_concentration.csv`](Results/error_concentration.csv)) quantifies this for the final models:
 
-* **Concentration (test set):** the 5 worst rows (0.25 % of the rows) cause 82 % of the NMOS_OFF `id` mean (3.5 % → 0.61 % without them) and
-  94 % of the `is` mean (8.0 % → 0.51 %); a single `is` row (dataset row 13855: 1.6e-13 A next to 5.3e-9 A, error 1.5e4 %) contributes 7.4
-  points. PMOS_OFF: 79 % (`id`) and 26 % (`is`). On the validation set the NMOS_OFF outlier is in `id` (mean 23.0 %), on the test set in `is`.
+* **Concentration (test set):** the 5 worst rows (0.25 % of the rows) cause 76 % of the NMOS_OFF `id` mean (3.8 % → 0.91 % without them) and
+  92 % of the `is` mean (9.5 % → 0.77 %); a single `is` row (dataset row 13855: 1.6e-13 A next to 5.3e-9 A, error 1.7e4 %) contributes 8.6
+  points. PMOS_OFF: 83 % (`id`) and 39 % (`is`). On the validation set the NMOS_OFF outlier is in `id` (mean 14.6 %), on the test set in `is`.
 * **Dose-response (held-out rows, `id` and `is`, mean error by current size relative to the largest current of the sample):**
 
 | \|I\| / largest current | 10 – 100 % | 1 – 10 % | 0.1 – 1 % | < 0.1 % |
 |---|---|---|---|---|
-| NMOS_OFF: pairs / mean error | 7,063 / 0.45 % | 859 / 3.5 % ² | 68 / ≈ 30 % | 10 / ≈ 6,200 % |
-| PMOS_OFF: pairs / mean error | 7,299 / 0.41 % | 637 / 1.8 % | 51 / ≈ 30 % | 13 / ≈ 610 % |
+| NMOS_OFF: pairs / mean error | 7,063 / 0.58 % | 859 / 4.6 % ² | 68 / ≈ 31 % | 10 / ≈ 4,700 % |
+| PMOS_OFF: pairs / mean error | 7,299 / 0.44 % | 637 / 1.8 % | 51 / ≈ 35 % | 13 / ≈ 700 % |
 
-  ² One row (|id| = 1.5e-12 A, 3.9 % of its row's largest current) has an error of 1.96e3 % and contributes 2.3 of these 3.5 points.
+  ² One row (|id| = 6.0e-12 A, 3.3 % of its row's largest current) has an error of 1.15e3 % and contributes 1.3 of these 4.6 points.
 
-  NMOS_ON and PMOS_ON have no pair below 1 %; their few large errors (up to 1,150 %) are at samples with vd ≈ vs close to the gate
+  NMOS_ON and PMOS_ON have no pair below 1 %; their few large errors (up to 1,160 %) are at samples with vd ≈ vs close to the gate
   voltage, where the transistor barely conducts and all four currents are tiny (largest 1e-12 – 1e-10 A).
-* **NMOS_OFF has deeper dips than PMOS_OFF** (smallest |id| 2.9e-15 A vs 4.7e-14 A; worst error 1.5e4 % vs 4.0e3 %), hence its larger mean.
+* **NMOS_OFF has deeper dips than PMOS_OFF** (smallest |id| 2.9e-15 A vs 4.7e-14 A; worst error 2.4e4 % vs 4.9e3 %), hence its larger mean.
 * **At the worst rows the SPICE data is uncertain at the percent level:** its own Kirchhoff residual is 1.9 % and 4.9 % of the two worst
-  NMOS_OFF targets. One PMOS_OFF `ib` row (3.0e-16 A) has a residual about nine times its value, i.e. at the solver's numerical floor.
+  NMOS_OFF targets, while the model is off by thousands of %.
 * No rows were removed from the datasets. Median and 95th percentile are the robust measures of typical accuracy; the
-  ampere-weighted error Σ|I_pred − I_true| / Σ|I_true| of the NMOS_OFF model before the gate-region rows is 0.35 %.
+  ampere-weighted error Σ|I_pred − I_true| / Σ|I_true| of NMOS_OFF is 0.48 % (0.35 % for the Huber model without gate-region rows).
 
 ## Follow-up study: NMOS_OFF error, structured splits and a better loss
 
@@ -337,8 +339,8 @@ Python 3 (developed under 3.12, re-run under 3.14) with the packages in [`../req
 3. The final models: `python3 ML_Models/Scripts/run_offstudy.py --stage 13` (two seeds per case, about 6 minutes per run; β is
    taken from the stage 11 / 12 runs kept in `Results/offstudy/runs/`), then `python3 ML_Models/Scripts/export_huber_models.py`
    (the Huber models of the study), then `python3 Data_Generation/Scripts/generate_gate_region_data.py` and
-   `python3 ML_Models/Scripts/train_on_models_gate_region.py --cases all` (the final models of all four cases, two seeds each; about
-   7 minutes for the ON cases; the OFF runs took 19 minutes each while other jobs were running)
+   `python3 ML_Models/Scripts/train_on_models_gate_region.py --cases all` (the final models of all four cases, one training seed
+   each, 12175305; roughly 7 – 20 minutes per model on a laptop CPU)
 4. `ML_Models/Results/model_evaluation.ipynb` — comparison table, test-set results, parity plots
 5. `python3 ML_Models/Scripts/check_sign_rule.py`
 6. Follow-up study (optional): `python3 ML_Models/Scripts/run_offstudy.py --stage N` for N = 1 … 12 (the finished runs are kept in `Results/offstudy/`), then `Results/nmos_off_study.ipynb`
@@ -355,11 +357,11 @@ under Python 3.12, reproduce their recorded test metrics to within 1e-4 relative
 * **Training length.** The final models train a fixed 3,000 epochs (no early stopping; the epoch with the lowest validation loss is kept), about 6 minutes per model on a laptop CPU.
 * **Hyper-parameters were not re-tuned for NMOS** (deliberately, to keep NMOS and PMOS comparable).
 * **Currents are predicted as magnitudes.** Their sign comes from the rule of `predict_signed` (see Current signs); it is wrong
-  only for some near-cancelled currents (at most 8e-6 of the total current on the test sets).
-* **Gate level** (Part B): gate median error 0.17 %, mean accuracy 99.77 % with the Kirchhoff composition of the
+  only for some near-cancelled currents (at most 1e-5 of the total current on the test sets).
+* **Gate level** (Part B): gate median error 0.18 %, mean accuracy 99.74 % with the Kirchhoff composition of the
   ON channels ([`../Gate_Validation/README.md`](../Gate_Validation/README.md)).
-* **Gate-region rows and uniform rows.** The gate-region rows cost the models 0.01 – 0.05 points of median error (and up to 0.3 points of
-  95th percentile for the OFF models) on uniformly sampled rows. The `id` / `is` of the ON models at |Vds| < 10 mV are not trained
+* **Gate-region rows and uniform rows.** The gate-region rows cost the models 0.02 – 0.11 points of median error (and up to 0.95 points
+  of 95th percentile, NMOS_OFF) on uniformly sampled rows. The `id` / `is` of the ON models at |Vds| < 10 mV are not trained
   (Kirchhoff supplies them in a gate), so do not use the ON models' channel currents in that region on their own. The extra rows are
   not drawn from the section 4 distribution (vd, vs are concentrated at the rails); they are single-transistor simulations with
   their own random draws, and the gate cells they target were identified from the gate-level evaluation, which the report should say.
