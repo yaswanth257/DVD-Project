@@ -86,7 +86,7 @@ def _transistors_for_gate(inst_name, gate_type, in_nets, out_net, vdd_net="vdd")
     return lines
 
 
-def build_netlist(corner, combo=None):
+def build_netlist(corner, combo=None, model_include=None):
     """Build a full transistor-level SPICE netlist for the CLA at one corner.
     If combo is None the first input combination (all zeros) is used for the initial
     DC values of the input sources, which forms the example netlist.
@@ -101,7 +101,7 @@ def build_netlist(corner, combo=None):
         f"* corner {int(corner['corner'])}: VDD = {fmt(vdd)} V, T = {fmt(corner['temp'])} C",
         f"* inputs a2 a1 a0 b2 b1 b0 cin = {combo_label(combo)}",
         "* gate sizing from gate_common: NAND2 Wn/Wp 180/180 nm, AND2 (NAND+INV), OR2 (NOR+INV)",
-        f'.include "{MODEL_FILE}"',
+        f'.include "{model_include or MODEL_FILE}"',
         "",
         OPTIONS,
         "",
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     corners = pd.read_csv(CORNERS_CSV).to_dict("records")
     corner0 = corners[0]
     combo0  = (0, 0, 0, 0, 0, 0, 0)
-    text    = build_netlist(corner0, combo0)
+    text    = build_netlist(corner0, combo0, model_include="../../45nm_MGK.pm")
     NETLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
     NETLIST_PATH.write_text(text)
     print(f"Wrote {NETLIST_PATH}")
